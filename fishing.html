@@ -155,7 +155,7 @@ function slotTitle(el){
   const name = el && el.querySelector('name');
   return name ? (name.textContent || '?') : '空';
 }
-function expEl(doc){ return listOf(find(doc, ['player','experiencePoints']), 'int')[4] || null; }
+function expEl(doc){ return listOf(find(doc, ['player','experiencePoints']), 'int')[1] || null; }
 function allowFlags(doc){
   const out = [];
   const root = doc.documentElement;
@@ -195,7 +195,7 @@ function patchFishing(text, level, exp){
   if (!m) throw new Error('找不到经验数组');
   const ints = m[1].match(/<int>-?\d+<\/int>/g) || [];
   if (ints.length < 5) throw new Error('经验数组不完整');
-  ints[4] = '<int>' + exp + '</int>';
+  ints[1] = '<int>' + exp + '</int>';
   out = out.slice(0, m.index) + '<experiencePoints>' + ints.join('') + '</experiencePoints>' + out.slice(m.index + m[0].length);
   return out;
 }
