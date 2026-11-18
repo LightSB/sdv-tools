@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1f2a37">
+<title>星露谷工具箱</title>
+<style>
+:root{
+  --paper:#f2f2f7; --surface:#fff; --ink:#1c1c1e; --muted:#8a8a8e;
+  --hairline:rgba(60,60,67,.12); --fill:rgba(120,120,128,.09);
+  --sans:-apple-system,system-ui,"PingFang SC",sans-serif;
+  --rounded:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#000;--surface:#1c1c1e;--ink:#f2f2f7;--muted:#8d8d93;
+    --hairline:rgba(235,235,245,.12);--fill:rgba(120,120,128,.2);}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+  padding:calc(40px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom))}
+h1{font-family:var(--rounded);font-size:26px;margin:0 0 6px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14px;margin:0 0 28px;text-align:center;line-height:1.6}
+.cards{display:flex;flex-direction:column;gap:14px;width:100%;max-width:420px}
+.card{display:block;background:var(--surface);border-radius:20px;padding:18px 20px;
+  text-decoration:none;color:inherit;border:1px solid var(--hairline);
+  box-shadow:0 8px 24px -18px rgba(0,0,0,.4);transition:transform .15s}
+.card:active{transform:scale(.985)}
+.card-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.icon{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:24px;
+  background:color-mix(in srgb,var(--tone) 16%,transparent)}
+.card h2{font-size:17px;margin:0;font-weight:600}
+.card p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.tagrow{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.tag{font-size:11px;padding:3px 9px;border-radius:99px;background:var(--fill);color:var(--muted)}
+footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center;line-height:1.7}
+footer code{font-family:ui-monospace,Menlo,monospace;background:var(--fill);padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+  <h1>星露谷工具箱</h1>
+  <p class="sub">手机上直接用的两个小工具<br>不联网、不装 App，打开就能使</p>
+
+  <div class="cards">
+    <a class="card" href="./codes.html" style="--tone:#3e8e5a">
+      <div class="card-top">
+        <div class="icon">📜</div>
+        <h2>物品代码</h2>
+      </div>
+      <p>2350 件物品带原图图标，335 条作弊码。搜中文/英文/ID，点一下就复制。</p>
+      <div class="tagrow">
+        <span class="tag">手机 / i 24</span>
+        <span class="tag">电脑 debug i 24</span>
+      </div>
+    </a>
+
+    <a class="card" href="./fishing.html" style="--tone:#1e6fa8">
+      <div class="card-top">
+        <div class="icon">🎣</div>
+        <h2>钓鱼一键改</h2>
+      </div>
+      <p>改存档：钓鱼等级与经验、附魔铱金鱼竿、整套铱金工具、36 格背包、聊天作弊开关。</p>
+      <div class="tagrow">
+        <span class="tag">选存档 · 改 · 导出</span>
+        <span class="tag">可撤销</span>
+      </div>
+    </a>
+  </div>
+
+  <footer>
+    作弊码需要先在存档里打开 <code>allowChatCheats</code> —— 钓鱼工具里点一下就行。<br>
+    改存档前请先备份。
+  </footer>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1E6FA8">
+<title>钓鱼一键改 · 星露谷存档</title>
+<style>
+:root{
+  --paper:#f2f2f7; --surface:#fff; --ink:#1c1c1e; --muted:#8a8a8e;
+  --hairline:rgba(60,60,67,.12); --accent:#1e6fa8; --accent-ink:#fff;
+  --fill:rgba(120,120,128,.09);
+  --rounded:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
+  --sans:-apple-system,system-ui,"PingFang SC",sans-serif;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#000;--surface:#1c1c1e;--ink:#f2f2f7;--muted:#8d8d93;
+    --hairline:rgba(235,235,245,.12);--accent:#4aa3e0;--accent-ink:#06212f;
+    --fill:rgba(120,120,128,.2);}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans)}
+button{font:inherit;color:inherit;border:0;background:none;padding:0}
+.app{min-height:100dvh;display:flex;flex-direction:column}
+.intro{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;gap:10px;padding:40px 28px calc(40px + env(safe-area-inset-bottom))}
+.intro-art{width:88px;height:88px;display:grid;place-items:center;border-radius:26px;font-size:44px;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 22%,var(--surface)),var(--surface));
+  box-shadow:0 12px 30px -16px color-mix(in srgb,var(--accent) 60%,transparent);margin-bottom:6px}
+.intro h1{font-family:var(--rounded);font-size:26px;margin:0}
+.intro p{margin:0;color:var(--muted);font-size:14px;line-height:1.6;max-width:320px}
+.page{flex:1;width:100%;max-width:560px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top)) 16px calc(150px + env(safe-area-inset-bottom))}
+.hero{position:relative;padding:18px 20px 18px;border-radius:26px;color:#fff;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(255,255,255,.26),transparent 55%),
+    linear-gradient(160deg,var(--accent),color-mix(in srgb,var(--accent) 72%,#000));
+  box-shadow:0 18px 40px -22px color-mix(in srgb,var(--accent) 80%,transparent);overflow:hidden}
+.hero-top{display:flex;align-items:center;gap:10px}
+.hero-file{flex:1;font-size:12.5px;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero-swap{font-size:12.5px;padding:6px 12px;border-radius:99px;background:rgba(255,255,255,.2);color:#fff}
+.hero-main{display:flex;align-items:baseline;gap:8px;margin-top:12px}
+.hero-num{font-family:var(--rounded);font-size:52px;line-height:1;font-weight:700;letter-spacing:-.03em}
+.hero-unit{font-size:14px;opacity:.85}
+.hero-sub{margin-top:8px;font-size:13px;opacity:.85}
+.chips{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.chip{font-size:12px;padding:5px 11px;border-radius:99px;background:rgba(255,255,255,.18)}
+.segmented{display:flex;gap:2px;padding:3px;margin:16px 0;border-radius:12px;background:var(--fill)}
+.segmented button{flex:1;min-height:36px;border-radius:9px;font-size:14px;color:var(--muted);
+  font-weight:500;text-align:center}
+.segmented button.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.card{background:var(--surface);border-radius:18px;padding:4px 16px;margin-bottom:14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card.plain{padding:14px 16px}
+.card.list{padding:4px 16px 0}
+.section-title{margin:20px 0 8px 4px;font-size:12.5px;font-weight:600;letter-spacing:.04em;
+  color:var(--muted);text-transform:uppercase}
+.row{display:flex;align-items:center;gap:12px;min-height:50px;border-bottom:1px solid var(--hairline)}
+.row:last-child{border-bottom:none}
+.row label{flex:1;font-size:15px}
+.row input{width:130px;text-align:right;font-size:17px;font-family:var(--rounded);
+  font-variant-numeric:tabular-nums;border:none;background:transparent;color:var(--ink);padding:8px 0}
+.row input:focus{outline:none;color:var(--accent)}
+.hint{margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5}
+.cta{width:100%;min-height:50px;border-radius:15px;background:var(--accent);color:var(--accent-ink);
+  font-size:16.5px;font-weight:600;text-align:center}
+.cta.big{min-height:60px;font-size:19px;border-radius:17px;
+  box-shadow:0 12px 26px -14px color-mix(in srgb,var(--accent) 85%,transparent);margin-top:4px}
+.ghost{flex:1;min-height:44px;border-radius:12px;background:var(--fill);color:var(--ink);
+  font-size:14.5px;font-weight:500;text-align:center}
+.ghost:disabled{opacity:.45}
+.footnote{margin:10px 4px 0;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.55}
+.entry{width:100%;display:flex;align-items:flex-start;gap:12px;text-align:left;padding:12px 0;
+  border-bottom:1px solid var(--hairline)}
+.entry:last-of-type{border-bottom:none}
+.check{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--hairline);
+  display:grid;place-items:center;font-size:13px;color:var(--accent-ink);margin-top:1px}
+.entry.on .check{background:var(--accent);border-color:var(--accent)}
+.entry-body{display:flex;flex-direction:column;gap:5px;min-width:0}
+.entry-line{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.entry-zh{font-size:15.5px;font-weight:600}
+.entry-en{font-size:11.5px;color:var(--muted)}
+.enchs{display:flex;flex-wrap:wrap;gap:5px}
+.ench{display:inline-flex;align-items:baseline;gap:4px;font-size:11px;padding:3px 8px;border-radius:7px;
+  background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);line-height:1.3}
+.ench i{font-style:normal;opacity:.55;font-size:9.5px}
+.ench.muted{background:var(--fill);color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.cell{min-height:62px;border-radius:11px;background:var(--fill);padding:7px 8px;display:flex;
+  flex-direction:column;gap:2px;overflow:hidden}
+.cell.void{background:color-mix(in srgb,var(--fill) 45%,transparent)}
+.cell.ghost{opacity:.38;background:transparent}
+.cell-i{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cell-zh{font-size:11.5px;font-weight:600;line-height:1.22;word-break:break-word}
+.cell-en{font-size:8.5px;color:var(--muted);line-height:1.2;word-break:break-word}
+.logline{margin:0 0 7px;font-size:13px;line-height:1.5}
+.logline:last-child{margin-bottom:0}
+.banner{margin:12px 0 0;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5}
+.banner.error{background:color-mix(in srgb,#d9463f 14%,transparent);color:#d9463f}
+.dock{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(18px);
+  border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:8px;max-width:560px;
+  margin:0 auto}
+.dock-row{display:flex;gap:8px}
+.toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  background:rgba(28,28,30,.92);color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;
+  z-index:50;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<input id="file" type="file" hidden>
+<script>
+const ROD = {"zh": "附魔铱金鱼竿", "name": "Advanced Iridium Rod", "ench": ["Auto-Hook"], "dedupe": true, "xml": "<Item xsi:type=\"FishingRod\"><isLostItem>false</isLostItem><category>-99</category><hasBeenInInventory>true</hasBeenInInventory><name>Advanced Iridium Rod</name><itemId>AdvancedIridiumRod</itemId><specialItem>false</specialItem><isRecipe>false</isRecipe><quality>0</quality><stack>1</stack><SpecialVariable>0</SpecialVariable><initialParentTileIndex>17</initialParentTileIndex><currentParentTileIndex>17</currentParentTileIndex><indexOfMenuItemView>17</indexOfMenuItemView><instantUse>false</instantUse><isEfficient>false</isEfficient><animationSpeedModifier>1</animationSpeedModifier><swingTicker>712661</swingTicker><upgradeLevel>4</upgradeLevel><numAttachmentSlots>3</numAttachmentSlots><attachments><Object xsi:nil=\"true\" /><Object xsi:nil=\"true\" /><Object xsi:nil=\"true\" /></attachments><enchantments xsi:type=\"AutoHookEnchantment\"><level>1</level></enchantments><previousEnchantments>Auto-Hook</previousEnchantments><InitialParentTileIndex>17</InitialParentTileIndex><IndexOfMenuItemView>17</IndexOfMenuItemView><InstantUse>false</InstantUse><IsEfficient>false</IsEfficient><AnimationSpeedModifier>1</AnimationSpeedModifier><CastDirection>-1</CastDirection></Item>"};
+const KIT = [{"zh": "附魔铱金鱼竿", "name": "Advanced Iridium Rod", "ench": ["Efficient", "Master", "Preserving", "Auto-Hook"], "xml": "<Item xsi:type=\"FishingRod\"><isLostItem>false</isLostItem><category>-99</category><hasBeenInInventory>true</hasBeenInInventory><name>Advanced Iridium Rod</name><itemId>AdvancedIridiumRod</itemId><specialItem>false</specialItem><isRecipe>false</isRecipe><quality>0</quality><stack>1</stack><SpecialVariable>0</SpecialVariable><initialParentTileIndex>17</initialParentTileIndex><currentParentTileIndex>17</currentParentTileIndex><indexOfMenuItemView>17</indexOfMenuItemView><instantUse>false</instantUse><isEfficient>false</isEfficient><animationSpeedModifier>1</animationSpeedModifier><swingTicker>712661</swingTicker><upgradeLevel>4</upgradeLevel><numAttachmentSlots>3</numAttachmentSlots><attachments><Object xsi:nil=\"true\" /><Object xsi:nil=\"true\" /><Object xsi:nil=\"true\" /></attachments><enchantments xsi:type=\"EfficientToolEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"MasterEnchantment\"><level>1</level></enchantments><previousEnchantments>Master</previousEnchantments><enchantments xsi:type=\"PreservingEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"AutoHookEnchantment\"><level>1</level></enchantments><previousEnchantments>Efficient</previousEnchantments><previousEnchantments>Archaeologist</previousEnchantments><previousEnchantments>Efficient</previousEnchantments><previousEnchantments>Preserving</previousEnchantments><previousEnchantments>Master</previousEnchantments><previousEnchantments>Auto-Hook</previousEnchantments><InitialParentTileIndex>17</InitialParentTileIndex><IndexOfMenuItemView>17</IndexOfMenuItemView><InstantUse>false</InstantUse><IsEfficient>false</IsEfficient><AnimationSpeedModifier>1</AnimationSpeedModifier><CastDirection>-1</CastDirection></Item>", "dedupe": true}, {"zh": "无限之刃", "name": "Infinity Blade", "ench": ["Vampiric", "Bug Killer", "Artful", "Crusader", "Haymaker"], "xml": "<Item xsi:type=\"MeleeWeapon\"><isLostItem>false</isLostItem><category>-98</category><hasBeenInInventory>true</hasBeenInInventory><name>Infinity Blade</name><itemId>62</itemId><specialItem>false</specialItem><isRecipe>false</isRecipe><quality>0</quality><stack>1</stack><SpecialVariable>0</SpecialVariable><initialParentTileIndex>62</initialParentTileIndex><currentParentTileIndex>62</currentParentTileIndex><indexOfMenuItemView>62</indexOfMenuItemView><instantUse>false</instantUse><isEfficient>false</isEfficient><animationSpeedModifier>0.1</animationSpeedModifier><swingTicker>194830</swingTicker><upgradeLevel>0</upgradeLevel><numAttachmentSlots>0</numAttachmentSlots><attachments /><enchantments xsi:type=\"VampiricEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"BugKillerEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"ArtfulEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"CrusaderEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"HaymakerEnchantment\"><level>1</level></enchantments><previousEnchantments>Vampiric</previousEnchantments><previousEnchantments>Bug Killer</previousEnchantments><previousEnchantments>Vampiric</previousEnchantments><previousEnchantments>Artful</previousEnchantments><previousEnchantments>Crusader</previousEnchantments><previousEnchantments>Haymaker</previousEnchantments><previousEnchantments>Artful</previousEnchantments><InitialParentTileIndex>62</InitialParentTileIndex><IndexOfMenuItemView>62</IndexOfMenuItemView><InstantUse>false</InstantUse><IsEfficient>false</IsEfficient><AnimationSpeedModifier>0.1</AnimationSpeedModifier><type>3</type><minDamage>666</minDamage><maxDamage>666</maxDamage><speed>16</speed><addedPrecision>0</addedPrecision><addedDefense>20</addedDefense><addedAreaOfEffect>0</addedAreaOfEffect><knockback>1</knockback><critChance>0.02</critChance><critMultiplier>3</critMultiplier><appearance>(W)65</appearance><isOnSpecial>false</isOnSpecial></Item>", "dedupe": false}, {"zh": "无限之刃（第二把）", "name": "Infinity Blade", "ench": ["Vampiric", "Bug Killer", "Artful", "Crusader", "Haymaker"], "xml": "<Item xsi:type=\"MeleeWeapon\"><isLostItem>false</isLostItem><category>-98</category><hasBeenInInventory>true</hasBeenInInventory><name>Infinity Blade</name><itemId>62</itemId><specialItem>false</specialItem><isRecipe>false</isRecipe><quality>0</quality><stack>1</stack><SpecialVariable>0</SpecialVariable><initialParentTileIndex>62</initialParentTileIndex><currentParentTileIndex>62</currentParentTileIndex><indexOfMenuItemView>62</indexOfMenuItemView><instantUse>false</instantUse><isEfficient>false</isEfficient><animationSpeedModifier>0.1</animationSpeedModifier><swingTicker>155019</swingTicker><upgradeLevel>0</upgradeLevel><numAttachmentSlots>0</numAttachmentSlots><attachments /><enchantments xsi:type=\"VampiricEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"BugKillerEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"ArtfulEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"CrusaderEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"HaymakerEnchantment\"><level>1</level></enchantments><previousEnchantments>Vampiric</previousEnchantments><previousEnchantments>Bug Killer</previousEnchantments><previousEnchantments>Vampiric</previousEnchantments><previousEnchantments>Artful</previousEnchantments><previousEnchantments>Crusader</previousEnchantments><previousEnchantments>Haymaker</previousEnchantments><previousEnchantments>Artful</previousEnchantments><InitialParentTileIndex>62</InitialParentTileIndex><IndexOfMenuItemView>62</IndexOfMenuItemView><InstantUse>false</InstantUse><IsEfficient>false</IsEfficient><AnimationSpeedModifier>0.1</AnimationSpeedModifier><type>3</type><minDamage>666</minDamage><maxDamage>666</maxDamage><speed>16</speed><addedPrecision>0</addedPrecision><addedDefense>20</addedDefense><addedAreaOfEffect>0</addedAreaOfEffect><knockback>1</knockback><critChance>0.02</critChance><critMultiplier>3</critMultiplier><isOnSpecial>false</isOnSpecial></Item>", "dedupe": false}, {"zh": "铱金淘金盘", "name": "Iridium Pan", "ench": ["Fisher", "Generous", "Reaching", "Archaeologist"], "xml": "<Item xsi:type=\"Pan\"><isLostItem>false</isLostItem><category>-99</category><hasBeenInInventory>true</hasBeenInInventory><name>Iridium Pan</name><itemId>IridiumPan</itemId><specialItem>false</specialItem><isRecipe>false</isRecipe><quality>0</quality><stack>1</stack><SpecialVariable>0</SpecialVariable><initialParentTileIndex>20</initialParentTileIndex><currentParentTileIndex>20</currentParentTileIndex><indexOfMenuItemView>12</indexOfMenuItemView><instantUse>false</instantUse><isEfficient>true</isEfficient><animationSpeedModifier>0.1</animationSpeedModifier><swingTicker>110076</swingTicker><upgradeLevel>4</upgradeLevel><numAttachmentSlots>0</numAttachmentSlots><attachments /><enchantments xsi:type=\"FisherEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"GenerousEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"ReachingToolEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"ArchaeologistEnchantment\"><level>1</level></enchantments><previousEnchantments>Fisher</previousEnchantments><previousEnchantments>Generous</previousEnchantments><previousEnchantments>Expansive</previousEnchantments><previousEnchantments>Archaeologist</previousEnchantments><previousEnchantments>Archaeologist</previousEnchantments><previousEnchantments>Generous</previousEnchantments><InitialParentTileIndex>20</InitialParentTileIndex><IndexOfMenuItemView>12</IndexOfMenuItemView><InstantUse>false</InstantUse><IsEfficient>true</IsEfficient><AnimationSpeedModifier>0.1</AnimationSpeedModifier></Item>", "dedupe": false}, {"zh": "铱金水壶", "name": "Iridium Watering Can", "ench": ["Bottomless", "Efficient", "Reaching"], "xml": "<Item xsi:type=\"WateringCan\"><isLostItem>false</isLostItem><category>-99</category><hasBeenInInventory>true</hasBeenInInventory><name>Iridium Watering Can</name><itemId>IridiumWateringCan</itemId><specialItem>false</specialItem><isRecipe>false</isRecipe><quality>0</quality><stack>1</stack><SpecialVariable>0</SpecialVariable><initialParentTileIndex>322</initialParentTileIndex><currentParentTileIndex>324</currentParentTileIndex><indexOfMenuItemView>345</indexOfMenuItemView><instantUse>false</instantUse><isEfficient>true</isEfficient><animationSpeedModifier>0.1</animationSpeedModifier><swingTicker>3334</swingTicker><upgradeLevel>4</upgradeLevel><numAttachmentSlots>0</numAttachmentSlots><attachments /><enchantments xsi:type=\"BottomlessEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"EfficientToolEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"ReachingToolEnchantment\"><level>1</level></enchantments><previousEnchantments>Bottomless</previousEnchantments><previousEnchantments>Efficient</previousEnchantments><previousEnchantments>Efficient</previousEnchantments><previousEnchantments>Archaeologist</previousEnchantments><previousEnchantments>Expansive</previousEnchantments><previousEnchantments>Archaeologist</previousEnchantments><previousEnchantments>Efficient</previousEnchantments><InitialParentTileIndex>322</InitialParentTileIndex><IndexOfMenuItemView>345</IndexOfMenuItemView><InstantUse>false</InstantUse><IsEfficient>true</IsEfficient><AnimationSpeedModifier>0.1</AnimationSpeedModifier><isBottomless>true</isBottomless><WaterLeft>100</WaterLeft><IsBottomless>true</IsBottomless></Item>", "dedupe": false}, {"zh": "铱金锄头", "name": "Iridium Hoe", "ench": ["Generous", "Archaeologist", "Efficient", "Swift", "Reaching"], "xml": "<Item xsi:type=\"Hoe\"><isLostItem>false</isLostItem><category>-99</category><hasBeenInInventory>true</hasBeenInInventory><name>Iridium Hoe</name><itemId>IridiumHoe</itemId><specialItem>false</specialItem><isRecipe>false</isRecipe><quality>0</quality><stack>1</stack><SpecialVariable>0</SpecialVariable><initialParentTileIndex>70</initialParentTileIndex><currentParentTileIndex>72</currentParentTileIndex><indexOfMenuItemView>96</indexOfMenuItemView><instantUse>false</instantUse><isEfficient>true</isEfficient><animationSpeedModifier>0.1</animationSpeedModifier><swingTicker>41678</swingTicker><upgradeLevel>4</upgradeLevel><numAttachmentSlots>0</numAttachmentSlots><attachments /><enchantments xsi:type=\"GenerousEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"ArchaeologistEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"EfficientToolEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"SwiftToolEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"ReachingToolEnchantment\"><level>1</level></enchantments><previousEnchantments>Generous</previousEnchantments><previousEnchantments>Archaeologist</previousEnchantments><previousEnchantments>Generous</previousEnchantments><previousEnchantments>Efficient</previousEnchantments><previousEnchantments>Archaeologist</previousEnchantments><previousEnchantments>Swift</previousEnchantments><previousEnchantments>Efficient</previousEnchantments><previousEnchantments>Expansive</previousEnchantments><previousEnchantments>Archaeologist</previousEnchantments><InitialParentTileIndex>70</InitialParentTileIndex><IndexOfMenuItemView>96</IndexOfMenuItemView><InstantUse>false</InstantUse><IsEfficient>true</IsEfficient><AnimationSpeedModifier>0.1</AnimationSpeedModifier></Item>", "dedupe": false}, {"zh": "铱金斧头", "name": "Iridium Axe", "ench": ["Shaving", "Powerful", "Efficient", "Swift"], "xml": "<Item xsi:type=\"Axe\"><isLostItem>false</isLostItem><category>-99</category><hasBeenInInventory>true</hasBeenInInventory><name>Iridium Axe</name><itemId>IridiumAxe</itemId><specialItem>false</specialItem><isRecipe>false</isRecipe><quality>0</quality><stack>1</stack><SpecialVariable>0</SpecialVariable><initialParentTileIndex>238</initialParentTileIndex><currentParentTileIndex>240</currentParentTileIndex><indexOfMenuItemView>264</indexOfMenuItemView><instantUse>false</instantUse><isEfficient>true</isEfficient><animationSpeedModifier>0.1</animationSpeedModifier><swingTicker>119220</swingTicker><upgradeLevel>4</upgradeLevel><numAttachmentSlots>0</numAttachmentSlots><attachments /><enchantments xsi:type=\"ShavingEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"PowerfulEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"EfficientToolEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"SwiftToolEnchantment\"><level>1</level></enchantments><previousEnchantments>Shaving</previousEnchantments><previousEnchantments>Powerful</previousEnchantments><previousEnchantments>Shaving</previousEnchantments><previousEnchantments>Efficient</previousEnchantments><previousEnchantments>Archaeologist</previousEnchantments><previousEnchantments>Swift</previousEnchantments><previousEnchantments>Efficient</previousEnchantments><InitialParentTileIndex>238</InitialParentTileIndex><IndexOfMenuItemView>264</IndexOfMenuItemView><InstantUse>false</InstantUse><IsEfficient>true</IsEfficient><AnimationSpeedModifier>0.1</AnimationSpeedModifier><additionalPower><int>2</int></additionalPower></Item>", "dedupe": false}, {"zh": "铱金镐", "name": "Iridium Pickaxe", "ench": ["Reaching", "Shaving", "Powerful"], "xml": "<Item xsi:type=\"Pickaxe\"><isLostItem>false</isLostItem><category>-99</category><hasBeenInInventory>true</hasBeenInInventory><name>Iridium Pickaxe</name><itemId>IridiumPickaxe</itemId><specialItem>false</specialItem><isRecipe>false</isRecipe><quality>0</quality><stack>1</stack><SpecialVariable>0</SpecialVariable><initialParentTileIndex>154</initialParentTileIndex><currentParentTileIndex>156</currentParentTileIndex><indexOfMenuItemView>180</indexOfMenuItemView><instantUse>false</instantUse><isEfficient>true</isEfficient><animationSpeedModifier>0.1</animationSpeedModifier><swingTicker>898216</swingTicker><upgradeLevel>4</upgradeLevel><numAttachmentSlots>0</numAttachmentSlots><attachments /><enchantments xsi:type=\"ReachingToolEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"ShavingEnchantment\"><level>1</level></enchantments><enchantments xsi:type=\"PowerfulEnchantment\"><level>1</level></enchantments><previousEnchantments>Expansive</previousEnchantments><previousEnchantments>Archaeologist</previousEnchantments><previousEnchantments>Shaving</previousEnchantments><previousEnchantments>Powerful</previousEnchantments><previousEnchantments>Shaving</previousEnchantments><InitialParentTileIndex>154</InitialParentTileIndex><IndexOfMenuItemView>180</IndexOfMenuItemView><InstantUse>false</InstantUse><IsEfficient>true</IsEfficient><AnimationSpeedModifier>0.1</AnimationSpeedModifier><additionalPower><int>0</int></additionalPower></Item>", "dedupe": false}, {"zh": "铱金镰刀", "name": "Iridium Scythe", "ench": [], "xml": "<Item xsi:type=\"MeleeWeapon\"><isLostItem>false</isLostItem><category>-99</category><hasBeenInInventory>true</hasBeenInInventory><name>Iridium Scythe</name><itemId>66</itemId><specialItem>false</specialItem><isRecipe>false</isRecipe><quality>0</quality><stack>1</stack><SpecialVariable>0</SpecialVariable><initialParentTileIndex>66</initialParentTileIndex><currentParentTileIndex>66</currentParentTileIndex><indexOfMenuItemView>66</indexOfMenuItemView><instantUse>false</instantUse><isEfficient>false</isEfficient><animationSpeedModifier>0.1</animationSpeedModifier><swingTicker>782577</swingTicker><upgradeLevel>0</upgradeLevel><numAttachmentSlots>0</numAttachmentSlots><attachments /><InitialParentTileIndex>66</InitialParentTileIndex><IndexOfMenuItemView>66</IndexOfMenuItemView><InstantUse>false</InstantUse><IsEfficient>false</IsEfficient><AnimationSpeedModifier>0.1</AnimationSpeedModifier><type>3</type><minDamage>666</minDamage><maxDamage>666</maxDamage><speed>0</speed><addedPrecision>0</addedPrecision><addedDefense>0</addedDefense><addedAreaOfEffect>3</addedAreaOfEffect><knockback>1</knockback><critChance>0.02</critChance><critMultiplier>4</critMultiplier><isOnSpecial>false</isOnSpecial></Item>", "dedupe": false}, {"zh": "回城权杖", "name": "Return Scepter", "ench": [], "xml": "<Item xsi:type=\"Wand\"><isLostItem>false</isLostItem><category>-99</category><hasBeenInInventory>true</hasBeenInInventory><name>Return Scepter</name><itemId>ReturnScepter</itemId><specialItem>false</specialItem><isRecipe>false</isRecipe><quality>0</quality><stack>1</stack><SpecialVariable>0</SpecialVariable><initialParentTileIndex>2</initialParentTileIndex><currentParentTileIndex>2</currentParentTileIndex><indexOfMenuItemView>2</indexOfMenuItemView><instantUse>true</instantUse><isEfficient>false</isEfficient><animationSpeedModifier>0.1</animationSpeedModifier><swingTicker>356807</swingTicker><upgradeLevel>0</upgradeLevel><numAttachmentSlots>0</numAttachmentSlots><attachments /><InitialParentTileIndex>2</InitialParentTileIndex><IndexOfMenuItemView>2</IndexOfMenuItemView><InstantUse>true</InstantUse><IsEfficient>false</IsEfficient><AnimationSpeedModifier>0.1</AnimationSpeedModifier></Item>", "dedupe": false}];
+const BAG = 36;
+const SEASON_ZH = {spring:'春', summer:'夏', fall:'秋', winter:'冬'};
+const XSI = 'http://www.w3.org/2001/XMLSchema-instance';
+const EMPTY_SLOT = '<Item xsi:nil="true" />';
+
+/* ——— 读取（解析成文档只为显示） ——— */
+function parseSave(text){
+  const clean = String(text).replace(/^\uFEFF/, '');
+  const doc = new DOMParser().parseFromString(clean, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('解析失败：这不是有效的 XML 文件');
+  const root = doc.documentElement;
+  if (!root || root.nodeName !== 'SaveGame'){
+    if (root && root.nodeName === 'SaveGameInfo') throw new Error('这是 SaveGameInfo（读档界面用的小文件），请选同目录下那个约 3 MB、没有扩展名的存档文件');
+    throw new Error('解析失败：缺少 SaveGame 根节点，不是星露谷存档');
+  }
+  return doc;
+}
+function find(doc, path){
+  let node = doc.documentElement;
+  for (const name of path){
+    if (!node) return null;
+    let next = null;
+    for (let c = node.firstElementChild; c; c = c.nextElementSibling){ if (c.nodeName === name){ next = c; break; } }
+    node = next;
+  }
+  return node;
+}
+function readText(doc, path, fallback){
+  const el = find(doc, path);
+  return el ? (el.textContent || '').trim() : (fallback === undefined ? '' : fallback);
+}
+function listOf(parent, name){
+  const out = [];
+  if (!parent) return out;
+  for (let c = parent.firstElementChild; c; c = c.nextElementSibling){ if (c.nodeName === name) out.push(c); }
+  return out;
+}
+function slotsOf(doc){ return listOf(find(doc, ['player','items']), 'Item'); }
+function slotTitle(el){
+  const name = el && el.querySelector('name');
+  return name ? (name.textContent || '?') : '空';
+}
+function expEl(doc){ return listOf(find(doc, ['player','experiencePoints']), 'int')[4] || null; }
+function allowFlags(doc){
+  const out = [];
+  const root = doc.documentElement;
+  for (let c = root.firstElementChild; c; c = c.nextElementSibling){
+    if (/^allow/i.test(c.nodeName)){
+      const v = (c.textContent || '').trim();
+      if (v === 'true' || v === 'false') out.push({ name: c.nodeName, value: v === 'true' });
+    }
+  }
+  return out;
+}
+function verify(text){
+  try {
+    const doc = new DOMParser().parseFromString(String(text).replace(/^\uFEFF/,''), 'application/xml');
+    if (doc.querySelector('parsererror')) return { ok:false, reason:'导出的 XML 无法解析' };
+    if (doc.documentElement.nodeName !== 'SaveGame') return { ok:false, reason:'导出内容缺少 SaveGame 根节点' };
+    return { ok:true, nodes: doc.getElementsByTagName('*').length };
+  } catch(e){ return { ok:false, reason:e.message }; }
+}
+
+/* ——— 文本级补丁：只动该动的字节 ——— */
+function bagRange(text){
+  const start = text.indexOf('<items>');
+  if (start < 0) throw new Error('存档里找不到玩家背包');
+  const open = start + '<items>'.length;
+  const end = text.indexOf('</items>', open);
+  if (end < 0) throw new Error('背包节点不完整');
+  return { open, end };
+}
+function patchFishing(text, level, exp){
+  let out = text;
+  const lvl = /<fishingLevel>-?\d+<\/fishingLevel>/;
+  if (!lvl.test(out)) throw new Error('找不到钓鱼等级字段');
+  out = out.replace(lvl, '<fishingLevel>' + level + '</fishingLevel>');
+  const block = /<experiencePoints>([\s\S]*?)<\/experiencePoints>/;
+  const m = out.match(block);
+  if (!m) throw new Error('找不到经验数组');
+  const ints = m[1].match(/<int>-?\d+<\/int>/g) || [];
+  if (ints.length < 5) throw new Error('经验数组不完整');
+  ints[4] = '<int>' + exp + '</int>';
+  out = out.slice(0, m.index) + '<experiencePoints>' + ints.join('') + '</experiencePoints>' + out.slice(m.index + m[0].length);
+  return out;
+}
+function patchPrepend(text, xmlList){
+  if (!xmlList.length) return text;
+  const { open, end } = bagRange(text);
+  const block = text.slice(open, end);
+  let outBlock = xmlList.join('') + block;
+  let remove = xmlList.length;
+  while (remove > 0){
+    const m = outBlock.match(/<Item\b[^<>]*\/>$/);
+    if (!m) break;
+    outBlock = outBlock.slice(0, outBlock.length - m[0].length);
+    remove--;
+  }
+  return text.slice(0, open) + outBlock + text.slice(end);
+}
+function patchBagSize(text, n){
+  const target = Math.max(12, Math.min(36, Math.round(Number(n) || 0)));
+  const { open, end } = bagRange(text);
+  const block = text.slice(open, end);
+  const count = (block.match(/<Item[\s/>]/g) || []).length;
+  let pad = '';
+  for (let i = count; i < target; i++) pad += EMPTY_SLOT;
+  let out = text.slice(0, open) + block + pad + text.slice(end);
+  const mi = /<maxItems>-?\d+<\/maxItems>/;
+  if (mi.test(out)) out = out.replace(mi, '<maxItems>' + target + '</maxItems>');
+  return out;
+}
+function patchFlag(text, name, value){
+  const re = new RegExp('<' + name + '>[^<]*</' + name + '>');
+  if (re.test(text)) return text.replace(re, '<' + name + '>' + value + '</' + name + '>');
+  const close = text.lastIndexOf('</SaveGame>');
+  if (close < 0) throw new Error('存档结构异常');
+  return text.slice(0, close) + '<' + name + '>' + value + '</' + name + '>' + text.slice(close);
+}
+
+/* ——— 状态 ——— */
+const S = {
+  fileName:'', raw:'', work:'', doc:null, sum:null,
+  tab:'fish', level:60, exp:15000, withRod:true,
+  picked:KIT.map(() => true), log:[], error:'', toast:'', undo:null,
+};
+
+function summarize(){
+  const doc = S.doc;
+  const slots = slotsOf(doc).map(slotTitle);
+  return {
+    player: readText(doc, ['player','name'], '?'),
+    farm: readText(doc, ['player','farmName'], '?'),
+    fishing: readText(doc, ['player','fishingLevel'], '0'),
+    exp: expEl(doc) ? expEl(doc).textContent : '?',
+    maxItems: readText(doc, ['player','maxItems'], '0'),
+    slots,
+    flags: allowFlags(doc),
+    used: slots.filter(s => s !== '空').length,
+  };
+}
+
+function loadText(text, name){
+  const doc = parseSave(text);
+  S.doc = doc; S.work = text; S.raw = text; S.fileName = name;
+  S.undo = null; S.log = []; S.error = ''; S.sum = summarize();
+  render();
+}
+
+function commit(nextText, lines){
+  const check = verify(nextText);
+  if (!check.ok){ S.error = '改动后的文件校验失败：' + check.reason; render(); return; }
+  S.undo = S.work;
+  S.work = nextText;
+  S.doc = parseSave(nextText);
+  S.sum = summarize();
+  S.log = lines; S.error = '';
+  render();
+}
+
+function runAll(){
+  try {
+    const lines = [];
+    const lv = Math.round(Number(S.level) || 0);
+    const ex = Math.round(Number(S.exp) || 0);
+    let t = patchFishing(S.work, lv, ex);
+    lines.push('✓ 钓鱼等级 ' + lv + ' 级，经验 ' + ex);
+    if (S.withRod){
+      const names = S.sum.slots.filter(n => n !== '空');
+      if (names.includes(ROD.name)) lines.push('· 背包里已经有「' + ROD.zh + '」了，跳过');
+      else {
+        t = patchPrepend(t, [ROD.xml]);
+        lines.push('✓ ' + ROD.zh + ' → 第 1 格');
+        if (names.length) lines.push('· 原有 ' + names.length + ' 件道具顺次后移，一件没丢');
+      }
+    }
+    commit(t, lines);
+  } catch(e){ S.error = e.message; render(); }
+}
+
+function runBag(){
+  try {
+    const chosen = KIT.filter((_, i) => S.picked[i]);
+    if (!chosen.length){ S.error = '先勾选要放入的装备'; render(); return; }
+    const names = S.sum.slots.filter(n => n !== '空');
+    const entries = chosen.filter(e => !(e.dedupe && names.includes(e.name)));
+    const skipped = chosen.length - entries.length;
+    const lines = ['✓ 背包 ' + BAG + ' 格'];
+    if (skipped) lines.push('· ' + skipped + ' 件背包里已经有了，跳过');
+    let t = patchBagSize(S.work, BAG);
+    if (entries.length){
+      t = patchPrepend(t, entries.map(e => e.xml));
+      entries.forEach((e, i) => lines.push('✓ ' + e.zh + ' → 第 ' + (i + 1) + ' 格'));
+      if (names.length) lines.push('· 原有 ' + names.length + ' 件道具顺次后移，一件没丢');
+    }
+    commit(t, lines);
+  } catch(e){ S.error = e.message; render(); }
+}
+
+function toggleFlag(name, value){
+  try { commit(patchFlag(S.work, name, value), ['✓ ' + name + ' → ' + value]); }
+  catch(e){ S.error = e.message; render(); }
+}
+
+function undo(){
+  if (!S.undo) return;
+  const prev = S.undo; S.undo = null;
+  S.work = prev; S.doc = parseSave(prev); S.sum = summarize();
+  S.log = ['↩ 已撤销上一次修改']; S.error = '';
+  render();
+}
+
+async function exportText(text, name){
+  const check = verify(text);
+  if (!check.ok){ S.error = '导出失败：' + check.reason; render(); return; }
+  const blob = new Blob([text], { type: 'application/xml' });
+  try {
+    const file = new File([blob], name, { type: 'application/xml' });
+    if (navigator.canShare && navigator.canShare({ files:[file] })){
+      await navigator.share({ files:[file], title:name });
+      S.toast = '已交给系统分享'; render(); return;
+    }
+  } catch(e){ if (e && e.name === 'AbortError') return; }
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 15000);
+    S.toast = '已生成文件，到「下载」里查看'; render();
+  } catch(e){ S.error = '无法保存：' + e.message; render(); }
+}
+
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let toastTimer = null;
+function toast(msg){
+  S.toast = msg;
+  const el = document.getElementById('toast');
+  if (el){ el.textContent = msg; el.style.display = 'block'; }
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { S.toast = ''; const e2 = document.getElementById('toast'); if (e2) e2.style.display = 'none'; }, 2200);
+}
+
+/* ——— 渲染 ——— */
+function render(){
+  const app = document.getElementById('app');
+  if (!S.sum){
+    app.innerHTML = '<div class="intro">' +
+      '<div class="intro-art">🎣</div>' +
+      '<h1>钓鱼一键改</h1>' +
+      '<p>钓鱼等级、经验、附魔铱金鱼竿、整套铱金工具、36 格背包和游戏内作弊开关。<br>在「文件」里选 StardewValley 下那个没有扩展名的存档。</p>' +
+      '<button class="cta" id="pick" style="max-width:240px">选择存档</button>' +
+      '<p style="font-size:12.5px">动手前先导出一份备份。</p>' +
+      (S.error ? '<div class="banner error">' + esc(S.error) + '</div>' : '') +
+      '</div>';
+    document.getElementById('pick').addEventListener('click', () => document.getElementById('file').click());
+    return;
+  }
+
+  const sum = S.sum;
+  const tabs = [['fish','一键修改'],['bag','背包工具'],['cheat','作弊']].map(([id,zh]) =>
+    '<button data-tab="' + id + '" class="' + (S.tab === id ? 'on' : '') + '">' + zh + '</button>').join('');
+
+  let body = '';
+  if (S.tab === 'fish'){
+    body = '<section class="card">' +
+        '<div class="row"><label>钓鱼等级</label><input id="lv" inputmode="numeric" value="' + S.level + '"></div>' +
+        '<div class="row"><label>钓鱼经验</label><input id="ex" inputmode="numeric" value="' + S.exp + '"></div>' +
+      '</section>' +
+      '<p class="footnote">游戏界面按 10 级画，数值本身照写。</p>' +
+      '<section class="card list">' +
+        '<button class="entry ' + (S.withRod ? 'on' : '') + '" data-rod="1" style="border-bottom:none">' +
+          '<span class="check">' + (S.withRod ? '✓' : '') + '</span>' +
+          '<span class="entry-body"><span class="entry-line"><span class="entry-zh">同时放入附魔铱金鱼竿</span></span>' +
+          '<span class="enchs"><span class="ench muted">关掉就只改数值</span></span></span>' +
+        '</button>' +
+      '</section>' +
+      '<button class="cta big" id="run">一键执行</button>' +
+      '<p class="footnote">钓鱼 ' + S.level + ' 级 · 经验 ' + S.exp + (S.withRod ? ' · 鱼竿插到第 1 格' : ' · 不放物品') + '。<br>原有道具顺次后移，背包格数不动。</p>';
+  } else if (S.tab === 'bag'){
+    const entries = KIT.map((k, i) =>
+      '<button class="entry ' + (S.picked[i] ? 'on' : '') + '" data-pick="' + i + '">' +
+        '<span class="check">' + (S.picked[i] ? '✓' : '') + '</span>' +
+        '<span class="entry-body"><span class="entry-line"><span class="entry-zh">' + esc(k.zh) + '</span>' +
+        '<span class="entry-en">' + esc(k.name) + '</span></span>' +
+        '<span class="enchs">' + (k.ench.length ? k.ench.map(e => '<span class="ench">' + esc(zhOfEnch(e)) + '<i>' + esc(e) + '</i></span>').join('') : '<span class="ench muted">无附魔</span>') + '</span>' +
+        '</span></button>').join('');
+    const cells = [];
+    for (let i = 0; i < BAG; i++){
+      const name = sum.slots[i] || '空';
+      const exists = i < sum.slots.length;
+      const empty = name === '空';
+      cells.push('<div class="cell ' + (empty ? 'void' : '') + ' ' + (exists ? '' : 'ghost') + '">' +
+        '<span class="cell-i">' + (i + 1) + '</span>' +
+        (empty ? '' : '<span class="cell-zh">' + esc(zhOfItem(name) || name) + '</span>' +
+          (zhOfItem(name) ? '<span class="cell-en">' + esc(name) + '</span>' : '')) +
+        '</div>');
+    }
+    body = '<section class="card plain"><div class="row"><label>背包格数</label><span style="color:var(--muted)">' + BAG + ' 格</span></div>' +
+        '<p class="hint">固定 36 格（游戏原生上限），只补空格，不删已有道具。</p></section>' +
+      '<p class="section-title">整套工具 · 勾选后插入</p>' +
+      '<section class="card list">' + entries + '</section>' +
+      '<button class="cta big" id="runbag">放入背包 · ' + S.picked.filter(Boolean).length + ' 件</button>' +
+      '<p class="footnote">新增的插到最前面，原有道具顺次后移，不覆盖。</p>' +
+      '<p class="section-title">背包现状 · ' + BAG + ' 格</p>' +
+      '<section class="card plain"><div class="grid">' + cells.join('') + '</div></section>';
+  } else {
+    const flags = sum.flags.length ? sum.flags.map(f =>
+      '<button class="entry ' + (f.value ? 'on' : '') + '" data-flag="' + esc(f.name) + '" style="border-bottom:none">' +
+        '<span class="check">' + (f.value ? '✓' : '') + '</span>' +
+        '<span class="entry-body"><span class="entry-line"><span class="entry-zh">允许聊天框作弊</span>' +
+        '<span class="entry-en">' + esc(f.name) + '</span></span>' +
+        '<span class="enchs"><span class="ench muted">' + (f.value ? '已开启' : '关闭') + '</span></span></span>' +
+      '</button>').join('') : '<p class="hint">这个存档里没有 allow 开头的开关。</p>';
+    body = '<p class="section-title">游戏内作弊指令</p><section class="card list">' + flags + '</section>' +
+      '<p class="footnote">改完记得导出覆盖；进游戏后在聊天框输入指令就能生效。</p>';
+  }
+
+  const logHtml = S.log.length ? '<p class="section-title">执行结果</p><section class="card plain">' +
+    S.log.map(l => '<p class="logline">' + esc(l) + '</p>').join('') + '</section>' : '';
+
+  app.innerHTML = '<div class="page">' +
+    '<header class="hero">' +
+      '<div class="hero-top"><span class="hero-file">' + esc(S.fileName) + '</span><button class="hero-swap" id="swap">换文件</button></div>' +
+      '<div class="hero-main"><span class="hero-num">' + esc(sum.fishing) + '</span><span class="hero-unit">级 钓鱼</span></div>' +
+      '<div class="hero-sub">' + esc(sum.player) + ' · ' + esc(sum.farm) + ' 农场 · 经验 ' + esc(sum.exp) + '</div>' +
+      '<div class="chips"><span class="chip">背包 ' + sum.used + '/' + BAG + '</span>' +
+        '<span class="chip">鱼竿 ' + (sum.slots.includes('Advanced Iridium Rod') ? '已有' : '待放入') + '</span></div>' +
+    '</header>' +
+    '<nav class="segmented">' + tabs + '</nav>' +
+    body +
+    logHtml +
+    (S.error ? '<div class="banner error">' + esc(S.error) + '</div>' : '') +
+    '</div>' +
+    '<div class="dock">' +
+      '<button class="cta" id="exp">导出存档</button>' +
+      '<div class="dock-row">' +
+        '<button class="ghost" id="bak">导出原始备份</button>' +
+        '<button class="ghost" id="undo"' + (S.undo ? '' : ' disabled') + '>撤销</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="toast" id="toast" style="display:none"></div>';
+
+  bind();
+}
+
+function bind(){
+  const app = document.getElementById('app');
+  document.getElementById('swap').addEventListener('click', () => document.getElementById('file').click());
+  document.getElementById('exp').addEventListener('click', () => exportText(S.work, S.fileName || 'SaveGame'));
+  document.getElementById('bak').addEventListener('click', () => exportText(S.raw, (S.fileName || 'SaveGame') + '_备份'));
+  document.getElementById('undo').addEventListener('click', undo);
+  app.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { S.tab = b.dataset.tab; render(); }));
+  app.querySelectorAll('[data-rod]').forEach(b => b.addEventListener('click', () => { S.withRod = !S.withRod; render(); }));
+  app.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => {
+    const i = Number(b.dataset.pick); S.picked = S.picked.map((v, j) => j === i ? !v : v); render();
+  }));
+  app.querySelectorAll('[data-flag]').forEach(b => b.addEventListener('click', () => {
+    const name = b.dataset.flag;
+    const cur = S.sum.flags.find(f => f.name === name);
+    toggleFlag(name, !(cur && cur.value));
+  }));
+  const lv = document.getElementById('lv');
+  if (lv) lv.addEventListener('input', e => { S.level = e.target.value; });
+  const ex = document.getElementById('ex');
+  if (ex) ex.addEventListener('input', e => { S.exp = e.target.value; });
+  document.getElementById('run')?.addEventListener('click', runAll);
+  document.getElementById('runbag')?.addEventListener('click', runBag);
+}
+
+/* ——— 中英对照 ——— */
+const ITEM_ZH = {
+  'Axe':'斧头','Hoe':'锄头','Watering Can':'水壶','Pickaxe':'镐','Scythe':'镰刀',
+  'Advanced Iridium Rod':'附魔铱金鱼竿','Infinity Blade':'无限之刃','Iridium Pan':'铱金淘金盘',
+  'Iridium Watering Can':'铱金水壶','Iridium Hoe':'铱金锄头','Iridium Axe':'铱金斧头',
+  'Iridium Pickaxe':'铱金镐','Iridium Scythe':'铱金镰刀','Return Scepter':'回城权杖',
+  Wood:'木材',Stone:'石头',Fiber:'纤维',Coal:'煤','Copper Ore':'铜矿石','Iron Ore':'铁矿石',
+  'Gold Ore':'金矿石','Iridium Ore':'铱矿石','Parsnip Seeds':'防风草种子',Parsnip:'防风草','Prismatic Shard':'五彩碎片',
+};
+const ENCH_ZH = {
+  Efficient:'高效',Master:'大师',Preserving:'防腐','Auto-Hook':'自动上钩',Vampiric:'吸血',
+  'Bug Killer':'杀虫',Artful:'巧妙',Crusader:'十字军',Haymaker:'干草',Fisher:'渔夫',
+  Generous:'慷慨',Reaching:'远及',Archaeologist:'考古学家',Bottomless:'无底',Swift:'迅捷',
+  Shaving:'刨削',Powerful:'强力',
+};
+function zhOfItem(en){ return ITEM_ZH[en] || ''; }
+function zhOfEnch(en){ return ENCH_ZH[en] || ''; }
+
+document.getElementById('file').addEventListener('change', e => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try { loadText(String(reader.result), file.name); }
+    catch(err){ S.error = err.message; render(); }
+  };
+  reader.onerror = () => { S.error = '读取文件失败'; render(); };
+  reader.readAsText(file, 'utf-8');
+  e.target.value = '';
+});
+
+render();
+</script>
+</body>
+</html>
