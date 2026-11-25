@@ -32,7 +32,7 @@ input{font-family:inherit}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px;white-space:nowrap;flex:0 1 auto;min-width:0}
 .brand span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .brand-ico{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:0 0 auto;background:linear-gradient(145deg,#5aa0ff,#3d7bf5);box-shadow:0 4px 10px -4px #3d7bf5;color:#fff}
-.theme-btn{min-width:44px;height:34px;padding:0 12px;border-radius:99px;background:var(--pill);font-size:12.5px;font-weight:700;flex:0 0 auto;display:grid;place-items:center;margin-left:auto}
+.theme-btn{width:34px;height:34px;border-radius:50%;background:var(--pill);font-size:15px;flex:0 0 auto;display:grid;place-items:center;margin-left:auto}
 .wrap{width:100%;max-width:720px;margin:0 auto;padding:18px 16px 0}
 .stepper{display:flex;gap:6px;margin:2px 0 20px}
 .step{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border-radius:16px;background:var(--surface);box-shadow:var(--shadow);border:2px solid transparent;transition:.2s}
@@ -52,12 +52,13 @@ input{font-family:inherit}
 .hint-toggle.on{transform:rotate(90deg)}
 .hint-body{display:none!important}
 /* 说明气泡：浮于原界面之上 */
-.hint-pop{position:fixed;z-index:90;width:min(320px,calc(100vw - 32px));background:var(--dark);color:var(--dark-ink);
-  border-radius:16px;padding:14px 16px;box-shadow:0 20px 50px -14px rgba(0,0,0,.55);font-size:12.5px;line-height:1.7;
+.hint-pop{position:fixed;z-index:90;width:min(320px,calc(100vw - 32px));background:#ffffff;color:#1b1b28;
+  border:1px solid rgba(28,28,60,.08);border-radius:16px;padding:14px 16px;box-shadow:0 20px 50px -14px rgba(66,52,140,.3);font-size:12.5px;line-height:1.7;
   opacity:0;transform:translateY(-6px) scale(.97);pointer-events:none;transition:opacity .2s ease,transform .2s ease}
 .hint-pop.on{opacity:1;transform:none;pointer-events:auto}
-.hint-pop::before{content:"";position:absolute;top:-7px;left:var(--arrow,50%);margin-left:-7px;width:14px;height:14px;background:var(--dark);transform:rotate(45deg);border-radius:3px}
-.hint-pop b{color:#8fb4ff}
+.hint-pop::before{content:"";position:absolute;top:-7px;left:var(--arrow,50%);margin-left:-7px;width:14px;height:14px;background:#ffffff;border-left:1px solid rgba(28,28,60,.08);border-top:1px solid rgba(28,28,60,.08);transform:rotate(45deg);border-radius:3px}
+.hint-pop b{color:#3d7bf5}
+.hint-pop .note{color:#6b6b80}
 .hint-pop .hp-title{font-weight:800;font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .hint-pop p{margin:0 0 8px}.hint-pop p:last-child{margin-bottom:0}
 .hint-pop .note{padding-left:0}
@@ -70,7 +71,7 @@ input{font-family:inherit}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 20px;border-radius:99px;font-size:14.5px;font-weight:700;transition:transform .15s,opacity .15s}
 .btn:active{transform:scale(.97)}
 .btn.primary{background:var(--dark);color:var(--dark-ink);box-shadow:0 12px 24px -12px rgba(0,0,0,.4)}
-.btn.green{background:var(--dark);color:var(--dark-ink);box-shadow:0 12px 24px -12px rgba(0,0,0,.4)}
+.btn.green{background:var(--dark);color:var(--dark-ink);box-shadow:0 12px 24px -12px rgba(0,0,0,.4)}.btn.pill{gap:10px;min-height:52px;padding:0 30px;font-size:16px;box-shadow:0 14px 30px -12px rgba(0,0,0,.45)}.btn.pill span{opacity:.65}
 .btn.ghost{background:var(--pill);color:var(--ink)}.btn.sm{min-height:34px;padding:0 13px;font-size:12.5px}
 .btn:disabled{opacity:.42;pointer-events:none}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:14px}
@@ -167,7 +168,7 @@ html[data-theme=dark] .pick-wrap{background-color:#3a3946;background-image:linea
 <div class="app">
   <div class="nav">
     <div class="brand"><span class="brand-ico">📦</span><span>星露谷 XNB 拆包合并</span></div>
-    <button class="theme-btn" id="themeBtn" title="切换深浅模式">夜间</button>
+    <button class="theme-btn" id="themeBtn" aria-label="切换深浅色">🌙</button>
   </div>
   <div class="wrap">
     <div class="stepper">
@@ -214,8 +215,8 @@ html[data-theme=dark] .pick-wrap{background-color:#3a3946;background-image:linea
         </div>
       </div>
       <div class="row" style="margin-top:12px">
-        <button class="btn green" id="packBtn" disabled>打包全部 XNB</button>
-        <button class="btn ghost" id="resetBtn">重新开始</button>
+        <button class="btn green pill" id="packBtn" disabled><span class="lbl">打包全部 XNB</span> <span>→</span></button>
+        <button class="btn ghost pill" id="resetBtn"><span class="lbl">重新开始</span> <span>→</span></button>
       </div>
       <div id="outArea" class="hidden">
         <div class="section-title" id="outTitle">已导出的文件 · 逐个保存到文件</div>
@@ -231,7 +232,7 @@ html[data-theme=dark] .pick-wrap{background-color:#3a3946;background-image:linea
   <div class="ed-head">
     <button class="x" id="edClose">✕</button>
     <div class="t" id="edTitle">编辑</div>
-    <button class="btn ghost sm" id="edDone">完成</button>
+    <button class="btn ghost sm" id="edDone">完成 <span>→</span></button>
   </div>
   <div class="ed-body">
     <div class="ed-sec">
@@ -281,8 +282,8 @@ html[data-theme=dark] .pick-wrap{background-color:#3a3946;background-image:linea
     <button class="fab danger" id="edReset" disabled>还原</button>
   </div>
   <div class="ed-foot">
-    <button class="btn ghost" id="edCancel">取消</button>
-    <button class="btn green" id="edDone2">完成</button>
+    <button class="btn ghost" id="edCancel">取消 <span>→</span></button>
+    <button class="btn green" id="edDone2">完成 <span>→</span></button>
   </div>
 </div>
 
@@ -7232,7 +7233,7 @@ const $=id=>document.getElementById(id);
 
 /* ---------- 主题 ---------- */
 try{ if(localStorage.getItem('xnb_theme')==='dark') document.documentElement.dataset.theme='dark'; }catch(e){}
-function syncTheme(){ $('themeBtn').textContent = document.documentElement.dataset.theme==='dark'?'日间':'夜间'; }
+function syncTheme(){ $('themeBtn').textContent = document.documentElement.dataset.theme==='dark'?'☀️':'🌙'; }
 syncTheme();
 $('themeBtn').addEventListener('click',()=>{
   const dark=document.documentElement.dataset.theme==='dark';
@@ -7336,7 +7337,7 @@ function renderStep2(){
     const n=p.applied;
     return '<div class="out-row"><div class="ic" style="background:'+(n?'var(--green)':'var(--blue)')+'">'+(n?'✓':'✎')+'</div>'+
       '<div class="info"><div class="n">'+esc(p.xnbName)+'</div><div class="s">'+(n?'已覆盖素材':'尚未覆盖')+'</div></div>'+
-      '<button class="btn ghost sm" data-edit="'+p.id+'">'+(n?'继续编辑':'去覆盖')+'</button></div>';
+      '<button class="btn ghost sm" data-edit="'+p.id+'">'+(n?'继续编辑':'去覆盖')+' <span>→</span></button></div>';
   }).join('');
   const box=$('step2Summary'); box.classList.toggle('hidden',S.projects.length===0);
   $('step2Empty').classList.toggle('hidden',S.projects.length>0);
@@ -7617,7 +7618,7 @@ function syncExportUI(){
   // 切换只更新按钮/选项显示，不清除已导出的文件
   $('fmtSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x.dataset.fmt===S.fmt));
   $('compWrap').style.display = S.fmt==='xnb' ? '' : 'none';
-  $('packBtn').textContent = S.fmt==='png' ? '导出合并 PNG' : '打包全部 XNB';
+  $('packBtn').innerHTML = '<span class="lbl">'+(S.fmt==='png'?'导出合并 PNG':'打包全部 XNB')+'</span> <span>→</span>';
 }
 $('fmtSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
   S.fmt=b.dataset.fmt; syncExportUI();
