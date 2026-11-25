@@ -177,10 +177,32 @@ const XSI = 'http://www.w3.org/2001/XMLSchema-instance';
 const EMPTY_SLOT = '<Item xsi:nil="true" />';
 
 /* ——— 读取（解析成文档只为显示） ——— */
+/* 清洗 XML：兼容 iOS Safari 严格解析 + mod 注入的非法字符 */
+function cleanXml(text){
+  let s = String(text == null ? '' : text).replace(/^\uFEFF/, '');   // 去 BOM
+  s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');                // 去 XML 1.0 非法控制字符
+  s = s.replace(/&(?!(?:#\d+|#x[0-9a-fA-F]+|[A-Za-z_][\w.-]*);)/g, '&amp;'); // 转义裸 &
+  return s;
+}
+function parseXmlDoc(text){ return new DOMParser().parseFromString(cleanXml(text), 'application/xml'); }
+function xmlFailMsg(text, pe){
+  const raw = String(text == null ? '' : text);
+  const t = raw.replace(/^\s+/, '');
+  let hint = '';
+  if (/^PK\x03\x04/.test(raw)) hint = '这是一个 ZIP 压缩包';
+  else if (/^<\?xml|^<html/i.test(t) || /<!doctype html/i.test(t)) hint = '这是一个 HTML 网页文件';
+  else if (/^[{[]/.test(t)) hint = '这是一个 JSON 文件';
+  else if (!t) hint = '文件是空的';
+  const head = t.slice(0, 80).replace(/[\r\n]+/g, ' ');
+  let perr = '';
+  try { perr = (pe && pe.textContent ? pe.textContent : '').replace(/\s+/g, ' ').slice(0, 100); } catch(e){}
+  return '解析失败：读到的不是有效的 XML 存档' + (hint ? '（' + hint + '）' : '') +
+    '。文件共 ' + raw.length + ' 字符，开头：' + (head || '（空）') + (perr ? ' ｜ ' + perr : '');
+}
 function parseSave(text){
-  const clean = String(text).replace(/^\uFEFF/, '');
-  const doc = new DOMParser().parseFromString(clean, 'application/xml');
-  if (doc.querySelector('parsererror')) throw new Error('解析失败：这不是有效的 XML 文件');
+  const doc = parseXmlDoc(text);
+  const pe = doc.querySelector('parsererror');
+  if (pe) throw new Error(xmlFailMsg(text, pe));
   const root = doc.documentElement;
   if (!root || root.nodeName !== 'SaveGame'){
     if (root && root.nodeName === 'SaveGameInfo') throw new Error('这是 SaveGameInfo（读档界面用的小文件），请选同目录下那个约 3 MB、没有扩展名的存档文件');
@@ -227,7 +249,7 @@ function allowFlags(doc){
 }
 function verify(text){
   try {
-    const doc = new DOMParser().parseFromString(String(text).replace(/^\uFEFF/,''), 'application/xml');
+    const doc = parseXmlDoc(text);
     if (doc.querySelector('parsererror')) return { ok:false, reason:'导出的 XML 无法解析' };
     if (doc.documentElement.nodeName !== 'SaveGame') return { ok:false, reason:'导出内容缺少 SaveGame 根节点' };
     return { ok:true, nodes: doc.getElementsByTagName('*').length };
@@ -315,7 +337,8 @@ function summarize(){
 
 function loadText(text, name){
   const doc = parseSave(text);
-  S.doc = doc; S.work = text; S.raw = text; S.fileName = name;
+  const clean = cleanXml(text); // 保存清洗后的干净文本，保证导出校验能过
+  S.doc = doc; S.work = clean; S.raw = clean; S.fileName = name;
   S.undo = null; S.log = []; S.error = ''; S.sum = summarize();
   render();
 }
@@ -665,7 +688,11 @@ document.getElementById('file').addEventListener('change', async e => {
     }
     loadText(text, picked.name + (picked.fromZip ? '（ZIP）' : ''));
     if (all.length > 1) toast('已从 ' + all.length + ' 个来源里识别出主存档：' + picked.name);
-  } catch(err){ S.error = '读取失败：' + err.message; render(); }
+  } catch(err){
+    // 读取/解析失败先清空旧的加载状态，避免错误 banner 叠在上一份存档界面上误导
+    S.fileName=''; S.raw=''; S.work=''; S.doc=null; S.sum=null; S.undo=null; S.log=[];
+    S.error = '读取失败：' + err.message; render();
+  }
 });
 
 /* ——— ZIP 压缩包支持：解压后复用同一套 main-save 识别规则 ——— */
