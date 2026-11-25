@@ -4,6 +4,9 @@
 
 - `codes.html` — 物品代码表（2350 件物品 + 335 条作弊码，分类筛选、搜索、排序，点一下复制；可切「手机版 / 电脑版」，手机复制 `/ i 97`、电脑复制 `debug i 97`）
 - `fishing.html` — 存档修改工具（钓鱼等级/经验、附魔铱金鱼竿、整套铱金工具、36 格背包、聊天作弊开关）
+- `xnb.html` — XNB 拆包合并工具（拆出图集 → 覆盖新素材 PNG → 打包回 XNB / 导出 PNG，全本机处理）
+
+在线地址：`https://lightsb.github.io/sdv-tools/`（首页），工具页 `fishing.html`、`xnb.html`、`codes.html`。
 
 作弊码需要先在存档里把 `<allowChatCheats>` 改成 `true`（钓鱼工具里的「作弊」页可以一键开）。
 改存档前请先备份。
