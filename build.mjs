@@ -426,7 +426,9 @@ function showToast(msg, action, onAction){
 
   main.addEventListener('touchstart',e=>{
     if(state.tab!=='codes') return;
-    closeAll(null);                 // 任何新手势先清掉所有残留（含惯性滚动后的展开行）
+    // 点红底删除按钮时绝不收起：否则按钮被 front 盖住，click 会落到下面的 code-row 触发复制
+    if(e.target.closest('.swipe-del')) return;
+    closeAll(null);                 // 其它新手势先清掉残余展开行
     const f=e.target.closest('.swipe-front');
     if(!f) return;
     sx=e.touches[0].clientX; sy=e.touches[0].clientY;
@@ -461,7 +463,16 @@ function showToast(msg, action, onAction){
   main.addEventListener('touchend',finish,{passive:true});
   main.addEventListener('touchcancel',()=>{ clearFront(front); front=null; moved=false; closeAll(null); },{passive:true});
   // 滚动（含惯性滚动）时立即收起所有展开行，杜绝红底残留
-  window.addEventListener('scroll',()=>{ if(front){ clearFront(front); front=null; moved=false; } closeAll(null); },{passive:true});
+  window.addEventListener('scroll',()=>{
+    if(pointerOnDel) return;        // 手指在删除按钮上（准备点击）时不收起，避免误触复制
+    if(front){ clearFront(front); front=null; moved=false; }
+    closeAll(null);
+  },{passive:true});
+  // 跟踪触点是否落在删除按钮，供 scroll/收起逻辑保护
+  let pointerOnDel=false;
+  main.addEventListener('touchstart',e=>{ pointerOnDel=!!(e.target.closest && e.target.closest('.swipe-del')); },{passive:true,capture:true});
+  document.addEventListener('touchend',()=>{ setTimeout(()=>{ pointerOnDel=false; },0); },{passive:true,capture:true});
+  document.addEventListener('touchcancel',()=>{ pointerOnDel=false; },{passive:true,capture:true});
 
   function removeKey(key){
     state.deleted.delete(key);
