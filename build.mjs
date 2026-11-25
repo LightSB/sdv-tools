@@ -128,17 +128,17 @@ ul.items li+li>*{border-top:1px solid var(--hairline)}
 .note{margin:2px 0 0;font-size:12px;line-height:1.5;color:var(--ink);white-space:pre-line}
 .note code{font-family:var(--mono);font-size:11px;background:var(--code-bg);color:var(--code-ink);padding:1px 4px;border-radius:4px}
 .note b{font-weight:600}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);
-  max-width:86vw;padding:9px 16px;border-radius:99px;background:rgba(28,28,30,.93);color:#fff;font-size:13px;
-  z-index:50;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;
+  max-width:86vw;padding:12px 20px;border-radius:99px;background:rgba(28,28,30,.94);color:#fff;font-size:14px;
+  z-index:120;white-space:nowrap;box-shadow:0 18px 44px -12px rgba(0,0,0,.45)}
 .toast-action{flex:0 0 auto;margin-left:12px;border:0;background:rgba(255,255,255,.18);color:#fff;
   border-radius:99px;padding:4px 12px;font-size:12.5px;font-weight:700}
 
 /* iOS 风格左滑删除（仅作弊码页） */
-.swipe-item{position:relative;overflow:hidden;background:var(--warn-ink)}
+.swipe-item{position:relative;overflow:hidden;background:var(--surface)}
 .swipe-del{position:absolute;top:0;right:0;bottom:0;width:84px;display:flex;align-items:center;justify-content:center;
   background:var(--warn-ink);color:#fff;font-family:var(--rounded);font-size:14px;font-weight:700}
-.swipe-front{position:relative;background:var(--surface);transition:transform .22s cubic-bezier(.2,.8,.3,1);will-change:transform}
+.swipe-front{position:relative;background:var(--surface);transition:transform .22s cubic-bezier(.2,.8,.3,1)}
 .swipe-front.open{transform:translateX(-84px)}
 .code-row{width:100%}
 .hint{display:none}
@@ -317,7 +317,7 @@ function render(){
   renderChips();
   const targetBar =
     '<div class="targetbar"><span class="targetbar-label">复制为</span><div class="seg">' +
-    '<button class="seg-btn' + (state.target === 'mobile' ? ' on' : '') + '" data-target="mobile">手机版 <code>/ i 97</code></button>' +
+    '<button class="seg-btn' + (state.target === 'mobile' ? ' on' : '') + '" data-target="mobile">手机版 <code>/i 97</code></button>' +
     '<button class="seg-btn' + (state.target === 'pc' ? ' on' : '') + '" data-target="pc">电脑版 <code>debug i 97</code></button>' +
     '</div></div>';
 
@@ -333,7 +333,7 @@ function render(){
       targetBar +
       (shown.length === 0 ? '<p class="empty">没有匹配的物品，换个关键词试试</p>' :
         '<ul class="items">' + shown.map(it => {
-          const cmd = state.target === 'pc' ? 'debug i ' + it.id : '/ i ' + it.id;
+          const cmd = state.target === 'pc' ? 'debug i ' + it.id : '/i ' + it.id;
           return '<li><button class="row" data-copy="' + esc(cmd) + '" aria-label="复制 ' + esc(it.zh) + '">' +
             '<span class="thumb"><img loading="lazy" decoding="async" src="' + (SPRITES[it.id] || '') + '" alt=""></span>' +
             '<span class="row-main"><span class="zh">' + esc(it.zh) + '</span><span class="en">' + esc(it.en || '—') + '</span></span>' +
@@ -383,7 +383,7 @@ function showToast(msg, action, onAction){
     b.addEventListener('click', ev => { ev.stopPropagation(); t.style.display='none'; if(onAction) onAction(); });
     t.appendChild(b);
   }
-  t.style.display = action ? 'flex' : 'block';
+  t.style.display = 'flex';
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.style.display = 'none'; }, action ? 5000 : 1800);
 }
@@ -426,9 +426,9 @@ function showToast(msg, action, onAction){
 
   main.addEventListener('touchstart',e=>{
     if(state.tab!=='codes') return;
+    closeAll(null);                 // 任何新手势先清掉所有残留（含惯性滚动后的展开行）
     const f=e.target.closest('.swipe-front');
     if(!f) return;
-    closeAll(null);                 // 新手势：先清掉其它所有残留
     sx=e.touches[0].clientX; sy=e.touches[0].clientY;
     front=f; moved=false; startOpen=f.classList.contains('open');
   },{passive:true});
@@ -459,7 +459,9 @@ function showToast(msg, action, onAction){
     moved=false;
   }
   main.addEventListener('touchend',finish,{passive:true});
-  main.addEventListener('touchcancel',()=>{ clearFront(front); front=null; moved=false; },{passive:true});
+  main.addEventListener('touchcancel',()=>{ clearFront(front); front=null; moved=false; closeAll(null); },{passive:true});
+  // 滚动（含惯性滚动）时立即收起所有展开行，杜绝红底残留
+  window.addEventListener('scroll',()=>{ if(front){ clearFront(front); front=null; moved=false; } closeAll(null); },{passive:true});
 
   function removeKey(key){
     state.deleted.delete(key);
