@@ -131,6 +131,8 @@ ul.items li+li>*{border-top:1px solid var(--hairline)}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);
   max-width:86vw;padding:9px 16px;border-radius:99px;background:rgba(28,28,30,.93);color:#fff;font-size:13px;
   z-index:50;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast-action{flex:0 0 auto;margin-left:12px;border:0;background:rgba(255,255,255,.18);color:#fff;
+  border-radius:99px;padding:4px 12px;font-size:12.5px;font-weight:700}
 
 /* iOS 风格左滑删除（仅作弊码页） */
 .swipe-item{position:relative;overflow:hidden;background:var(--warn-ink)}
@@ -140,6 +142,22 @@ ul.items li+li>*{border-top:1px solid var(--hairline)}
 .swipe-front.open{transform:translateX(-84px)}
 .code-row{width:100%}
 .hint{display:none}
+/* 回收站（删除记录 + 撤销） */
+.trash-btn{margin-left:auto;padding:5px 12px;border-radius:99px;background:var(--fill);color:var(--muted);font-size:12px;font-weight:700}
+.trash-panel{position:fixed;inset:0;z-index:80;display:none;align-items:flex-end;justify-content:center;background:rgba(20,20,30,.42)}
+.trash-card{width:100%;max-width:520px;max-height:76vh;display:flex;flex-direction:column;background:var(--surface);
+  border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.2)}
+.trash-head{display:flex;align-items:center;gap:6px;font-weight:800;font-size:16px;margin-bottom:10px}
+.trash-head .trash-x{margin-left:auto;width:32px;height:32px;border-radius:50%;background:var(--fill);color:var(--muted);font-size:15px}
+.trash-body{overflow:auto;flex:1}
+.trash-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--hairline)}
+.trash-info{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.trash-info b{font-family:var(--mono);font-size:12.5px;color:var(--code-ink);word-break:break-all}
+.trash-info span{font-size:12px;color:var(--muted)}
+.trash-restore{flex:0 0 auto;padding:6px 12px;border-radius:99px;background:var(--accent);color:#fff;font-size:12px;font-weight:700}
+.trash-empty{text-align:center;color:var(--muted);padding:30px 0;font-size:13px}
+.trash-foot{padding-top:12px;display:flex}
+.trash-foot button{flex:1;padding:11px;border-radius:12px;background:var(--fill);color:var(--ink);font-weight:700;font-size:13px}
 </style>
 </head>
 <body>
@@ -159,6 +177,13 @@ ul.items li+li>*{border-top:1px solid var(--hairline)}
 <main id="main"></main>
 </div>
 <div class="toast" id="toast" style="display:none"></div>
+<div class="trash-panel" id="trashPanel">
+  <div class="trash-card">
+    <div class="trash-head">回收站 · <span id="trashCount">0</span><button class="trash-x" data-trash-close aria-label="关闭">✕</button></div>
+    <div class="trash-body" id="trashBody"></div>
+    <div class="trash-foot"><button data-trash-clear>恢复全部</button></div>
+  </div>
+</div>
 <script>
 const ITEMS = ${JSON.stringify(ITEMS)};
 const SPRITES = ${JSON.stringify(SPRITES)};
@@ -190,6 +215,8 @@ const state = { tab:'items', q:'', cat:'all', ccat:'all', sort:'default', dir:'a
 
 /* 已删除的作弊码（左滑删除，本地持久化） */
 try{ state.deleted = new Set(JSON.parse(localStorage.getItem('sdv-codes-deleted')||'[]')); }catch(e){ state.deleted = new Set(); }
+/* 删除记录（回收站，可撤销/恢复） */
+try{ state.trash = JSON.parse(localStorage.getItem('sdv-codes-trash')||'[]'); if(!Array.isArray(state.trash)) state.trash=[]; }catch(e){ state.trash=[]; }
 
 const $ = (s) => document.querySelector(s);
 const main = $('#main');
@@ -318,7 +345,7 @@ function render(){
     const groups = codeList();
     const total = groups.reduce((n, g) => n + g.list.length, 0);
     main.innerHTML =
-      '<div class="summary"><span>' + (state.q || state.ccat !== 'all' ? fmt(total) + ' 条命令' : '共 ' + fmt(total) + ' 条命令') + '</span></div>' +
+      '<div class="summary"><span>' + (state.q || state.ccat !== 'all' ? fmt(total) + ' 条命令' : '共 ' + fmt(total) + ' 条命令') + '</span><button class="trash-btn" data-trash-open>回收站 ' + state.trash.length + '</button></div>' +
       targetBar +
       (groups.length === 0 ? '<p class="empty">没有匹配的命令，换个筛选试试</p>' :
         groups.map(g => '<div class="group-title">' + esc(g.zh) + ' <b>' + g.list.length + '</b></div>' +
@@ -346,63 +373,156 @@ async function copyText(text){
 }
 
 let toastTimer = 0;
-function showToast(msg){
+function showToast(msg, action, onAction){
   const t = $('#toast');
-  t.textContent = msg; t.style.display = 'block';
+  t.textContent = '';
+  const lab = document.createElement('span'); lab.textContent = msg; t.appendChild(lab);
+  if(action){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'toast-action'; b.textContent = action;
+    b.addEventListener('click', ev => { ev.stopPropagation(); t.style.display='none'; if(onAction) onAction(); });
+    t.appendChild(b);
+  }
+  t.style.display = action ? 'flex' : 'block';
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.style.display = 'none'; }, 1800);
+  toastTimer = setTimeout(() => { t.style.display = 'none'; }, action ? 5000 : 1800);
 }
 
-/* ---------- 作弊码左滑删除（iOS 风格） ---------- */
+/* ---------- 作弊码左滑删除 + 回收站撤销（iOS 风格） ---------- */
 (function(){
-  let sx=0, sy=0, front=null, openFront=null, moved=false, locked=false;
-  function closeAll(except){ if(openFront && openFront!==except){ openFront.classList.remove('open'); openFront.style.transform=''; openFront=null; } }
+  const OPEN=84, LIM=110, SNAP=42, TH=6;
+  let sx=0, sy=0, front=null, openFront=null, moved=false, startOpen=false;
+
+  function clearFront(f){
+    if(!f) return;
+    f.style.transition=''; f.style.transform=''; f.classList.remove('open');
+    if(openFront===f) openFront=null;
+  }
+  function closeAll(except){
+    // 一次性清理所有行的残留（含拖拽中的行内样式），只保留 except 的展开态
+    main.querySelectorAll('.swipe-front').forEach(f=>{
+      if(f===except) return;
+      f.style.transition=''; f.style.transform=''; f.classList.remove('open');
+    });
+    openFront = except && except.classList.contains('open') ? except : null;
+  }
+  function codeAt(key){
+    for(const g of CODE_GROUPS){
+      for(const c of g.items){ if(g.id+'::'+c.id===key) return { c, g }; }
+    }
+    return null;
+  }
+  function saveTrash(){
+    try{
+      localStorage.setItem('sdv-codes-deleted',JSON.stringify([...state.deleted]));
+      localStorage.setItem('sdv-codes-trash',JSON.stringify(state.trash));
+    }catch(err){}
+  }
+  // 迁移旧数据：早期只有 deleted 集合，没有回收站明细
+  if(state.deleted.size && !state.trash.length){
+    state.deleted.forEach(k=>{ const hit=codeAt(k); state.trash.push({key:k, cmd:hit?hit.c.cmd:'', zh:hit?hit.c.zh:'', ts:0}); });
+    saveTrash();
+  }
+
   main.addEventListener('touchstart',e=>{
+    if(state.tab!=='codes') return;
     const f=e.target.closest('.swipe-front');
-    if(!f || state.tab!=='codes'){ return; }
-    sx=e.touches[0].clientX; sy=e.touches[0].clientY; front=f; moved=false;
-    locked=!!f.closest('.swipe-item').querySelector('.swipe-del') && true;
-    const isOpen=f.classList.contains('open');
-    // 记录基础偏移
-    f.dataset.base = isOpen ? '-84' : '0';
+    if(!f) return;
+    closeAll(null);                 // 新手势：先清掉其它所有残留
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+    front=f; moved=false; startOpen=f.classList.contains('open');
   },{passive:true});
+
   main.addEventListener('touchmove',e=>{
     if(!front || state.tab!=='codes') return;
     const dx=e.touches[0].clientX-sx, dy=e.touches[0].clientY-sy;
-    if(!moved && Math.abs(dy)>Math.abs(dx)){ front=null; return; } // 纵向滚动交给页面
-    if(Math.abs(dx)>6) moved=true;
-    if(!moved) return;
-    let base=parseInt(front.dataset.base||'0',10);
-    let x=base+dx;
-    if(x>0) x=x*0.25;           // 右滑阻尼
-    if(x<-110) x=-110;
+    if(!moved){
+      if(Math.abs(dy)>Math.abs(dx)){ clearFront(front); front=null; return; } // 纵向滚动：彻底复位，不留红底
+      if(Math.abs(dx)<=TH) return;
+      moved=true;
+    }
+    let x=(startOpen?-OPEN:0)+dx;
+    if(x>0) x*=0.25;
+    if(x<-LIM) x=-LIM;
     front.style.transition='none';
     front.style.transform='translateX('+x+'px)';
   },{passive:true});
-  main.addEventListener('touchend',e=>{
+
+  function finish(){
     if(!front || state.tab!=='codes'){ front=null; return; }
-    const dx=(e.changedTouches[0].clientX-sx);
-    const base=parseInt(front.dataset.base||'0',10);
-    const x=base+dx;
-    front.style.transition='';
-    front.style.transform='';
-    if(x < -42){ closeAll(front); front.classList.add('open'); openFront=front; }
-    else { front.classList.remove('open'); if(openFront===front) openFront=null; }
-    front=null;
-  },{passive:true});
-  // 点删除 / 点其他地方关闭
+    const f=front; front=null;
+    const m=/translateX\((-?[\d.]+)px\)/.exec(f.style.transform||'');
+    const x=m ? parseFloat(m[1]) : (startOpen?-OPEN:0);
+    f.style.transition=''; f.style.transform='';
+    if(x<=-SNAP){ closeAll(f); f.classList.add('open'); openFront=f; }
+    else { f.classList.remove('open'); if(openFront===f) openFront=null; }
+    moved=false;
+  }
+  main.addEventListener('touchend',finish,{passive:true});
+  main.addEventListener('touchcancel',()=>{ clearFront(front); front=null; moved=false; },{passive:true});
+
+  function removeKey(key){
+    state.deleted.delete(key);
+    state.trash=state.trash.filter(r=>r.key!==key);
+    saveTrash();
+  }
+  function undoLast(){
+    const rec=state.trash.pop();
+    if(!rec){ showToast('没有可撤销的删除'); return; }
+    removeKey(rec.key);
+    showToast('已恢复：'+rec.cmd);
+    openFront=null; front=null;
+    render();
+  }
+  function renderTrash(){
+    const body=document.getElementById('trashBody');
+    const cnt=document.getElementById('trashCount');
+    if(!body) return;
+    const list=state.trash.slice().reverse();
+    cnt.textContent=list.length;
+    body.innerHTML = list.length
+      ? list.map(r=>'<div class="trash-row"><div class="trash-info"><b>'+esc(r.cmd)+'</b><span>'+esc(r.zh||'')+'</span></div><button class="trash-restore" data-restore="'+esc(r.key)+'">恢复</button></div>').join('')
+      : '<p class="trash-empty">回收站是空的</p>';
+  }
+  function openTrash(){ renderTrash(); const p=document.getElementById('trashPanel'); if(p) p.style.display='flex'; }
+  function closeTrash(){ const p=document.getElementById('trashPanel'); if(p) p.style.display='none'; }
+
   document.addEventListener('click',e=>{
     const del=e.target.closest('[data-del]');
     if(del){
       e.stopPropagation();
       const key=del.dataset.del;
-      state.deleted.add(key);
-      try{ localStorage.setItem('sdv-codes-deleted',JSON.stringify([...state.deleted])); }catch(err){}
-      showToast('已删除该作弊码');
+      if(!state.deleted.has(key)){
+        const hit=codeAt(key);
+        state.trash.push({ key:key, cmd:hit?hit.c.cmd:'', zh:hit?hit.c.zh:'', ts:Date.now() });
+        state.deleted.add(key);
+        saveTrash();
+      }
+      openFront=null; front=null;
+      showToast('已删除该作弊码','撤销',undoLast);
       render();
       return;
     }
-    if(state.tab==='codes' && !e.target.closest('.swipe-front')) closeAll();
+    if(e.target.closest('[data-undo]')){ e.stopPropagation(); undoLast(); return; }
+    if(e.target.closest('[data-trash-open]')){ e.stopPropagation(); openTrash(); return; }
+    if(e.target.closest('[data-trash-close]')){ e.stopPropagation(); closeTrash(); return; }
+    if(e.target.id==='trashPanel'){ e.stopPropagation(); closeTrash(); return; }
+    if(e.target.closest('[data-trash-clear]')){
+      e.stopPropagation();
+      if(!state.trash.length){ showToast('回收站是空的'); return; }
+      const n=state.trash.length;
+      state.deleted.clear(); state.trash=[]; saveTrash();
+      showToast('已恢复全部 '+n+' 条');
+      closeTrash(); openFront=null; front=null; render(); return;
+    }
+    const res=e.target.closest('[data-restore]');
+    if(res){
+      e.stopPropagation();
+      removeKey(res.dataset.restore);
+      showToast('已恢复该作弊码');
+      renderTrash(); openFront=null; front=null; render(); return;
+    }
+    if(state.tab==='codes' && !e.target.closest('.swipe-front') && !e.target.closest('#trashPanel')) closeAll(null);
   },true);
 })();
 

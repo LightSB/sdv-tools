@@ -32,7 +32,7 @@ input{font-family:inherit}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px;white-space:nowrap;flex:0 1 auto;min-width:0}
 .brand span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .brand-ico{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:0 0 auto;background:linear-gradient(145deg,#5aa0ff,#3d7bf5);box-shadow:0 4px 10px -4px #3d7bf5;color:#fff}
-.theme-btn{width:34px;height:34px;border-radius:50%;background:var(--pill);font-size:15px;flex:0 0 auto;display:grid;place-items:center;margin-left:auto}
+.theme-btn{min-width:44px;height:34px;padding:0 12px;border-radius:99px;background:var(--pill);font-size:12.5px;font-weight:700;flex:0 0 auto;display:grid;place-items:center;margin-left:auto}
 .wrap{width:100%;max-width:720px;margin:0 auto;padding:18px 16px 0}
 .stepper{display:flex;gap:6px;margin:2px 0 20px}
 .step{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border-radius:16px;background:var(--surface);box-shadow:var(--shadow);border:2px solid transparent;transition:.2s}
@@ -167,7 +167,7 @@ html[data-theme=dark] .pick-wrap{background-color:#3a3946;background-image:linea
 <div class="app">
   <div class="nav">
     <div class="brand"><span class="brand-ico">📦</span><span>星露谷 XNB 拆包合并</span></div>
-    <button class="theme-btn" id="themeBtn" title="切换深浅模式">🌙</button>
+    <button class="theme-btn" id="themeBtn" title="切换深浅模式">夜间</button>
   </div>
   <div class="wrap">
     <div class="stepper">
@@ -203,8 +203,8 @@ html[data-theme=dark] .pick-wrap{background-color:#3a3946;background-image:linea
       <h2><span class="h-ico">📦</span>第三步 · 选择格式并导出</h2>
       <p class="desc">选择导出格式：<b>XNB</b> 写回游戏（XNB 来源保留原文件头；PNG 来源自动生成标准纹理头），<b>PNG</b> 直接保存合并后的透明图集。两种来源都能任选格式导出；每次导出的文件都会<b>保留在下方</b>，可继续导出其他格式。</p>
       <div class="seg" id="fmtSeg">
-        <button class="active" data-fmt="xnb">📦 打包成 XNB</button>
-        <button data-fmt="png">🖼️ 导出合并 PNG</button>
+        <button class="active" data-fmt="xnb">打包成 XNB</button>
+        <button data-fmt="png">导出合并 PNG</button>
       </div>
       <div id="compWrap" style="margin-top:10px">
         <div class="ed-label" style="margin:0 0 6px">XNB 压缩方式</div>
@@ -214,8 +214,8 @@ html[data-theme=dark] .pick-wrap{background-color:#3a3946;background-image:linea
         </div>
       </div>
       <div class="row" style="margin-top:12px">
-        <button class="btn green" id="packBtn" disabled>⚙️ 打包全部 XNB</button>
-        <button class="btn ghost" id="resetBtn">🔄 重新开始</button>
+        <button class="btn green" id="packBtn" disabled>打包全部 XNB</button>
+        <button class="btn ghost" id="resetBtn">重新开始</button>
       </div>
       <div id="outArea" class="hidden">
         <div class="section-title" id="outTitle">已导出的文件 · 逐个保存到文件</div>
@@ -7232,7 +7232,7 @@ const $=id=>document.getElementById(id);
 
 /* ---------- 主题 ---------- */
 try{ if(localStorage.getItem('xnb_theme')==='dark') document.documentElement.dataset.theme='dark'; }catch(e){}
-function syncTheme(){ $('themeBtn').textContent = document.documentElement.dataset.theme==='dark'?'☀️':'🌙'; }
+function syncTheme(){ $('themeBtn').textContent = document.documentElement.dataset.theme==='dark'?'日间':'夜间'; }
 syncTheme();
 $('themeBtn').addEventListener('click',()=>{
   const dark=document.documentElement.dataset.theme==='dark';
@@ -7617,7 +7617,7 @@ function syncExportUI(){
   // 切换只更新按钮/选项显示，不清除已导出的文件
   $('fmtSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x.dataset.fmt===S.fmt));
   $('compWrap').style.display = S.fmt==='xnb' ? '' : 'none';
-  $('packBtn').textContent = S.fmt==='png' ? '🖼️ 导出合并 PNG' : '⚙️ 打包全部 XNB';
+  $('packBtn').textContent = S.fmt==='png' ? '导出合并 PNG' : '打包全部 XNB';
 }
 $('fmtSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
   S.fmt=b.dataset.fmt; syncExportUI();
