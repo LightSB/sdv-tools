@@ -4,87 +4,146 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1f2a37">
+<meta name="theme-color" content="#f7f6fb">
 <title>星露谷工具箱</title>
 <style>
 :root{
-  --paper:#f2f2f7; --surface:#fff; --ink:#1c1c1e; --muted:#8a8a8e;
-  --hairline:rgba(60,60,67,.12); --fill:rgba(120,120,128,.09);
-  --sans:-apple-system,system-ui,"PingFang SC",sans-serif;
-  --rounded:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
-  color-scheme:light dark;
+  --bg:#f7f6fb;--bg-grad:linear-gradient(180deg,#f1eeff 0%,#fbf1f7 42%,#f7f6fb 100%);
+  --surface:#fff;--ink:#1b1b28;--muted:#9292a6;--line:rgba(28,28,60,.08);
+  --pill:#f1f0f6;--dark:#1b1b28;--dark-ink:#fff;--blue:#3d7bf5;--green:#2fae6b;--purple:#7a5af5;
+  --radius:22px;--shadow:0 10px 34px -16px rgba(66,52,140,.22);
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Rounded","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
 }
-@media (prefers-color-scheme:dark){
-  :root{--paper:#000;--surface:#1c1c1e;--ink:#f2f2f7;--muted:#8d8d93;
-    --hairline:rgba(235,235,245,.12);--fill:rgba(120,120,128,.2);}
+html[data-theme=dark]{
+  --bg:#131219;--bg-grad:linear-gradient(180deg,#1e1b2c 0%,#1b1720 42%,#131219 100%);
+  --surface:#23222e;--ink:#f5f4fb;--muted:#9b9aae;--line:rgba(255,255,255,.1);
+  --pill:#2e2d3b;--dark:#f5f4fb;--dark-ink:#1b1b28;--shadow:0 10px 34px -16px rgba(0,0,0,.6);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
-  min-height:100dvh;display:flex;flex-direction:column;align-items:center;
-  padding:calc(40px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom))}
-h1{font-family:var(--rounded);font-size:26px;margin:0 0 6px;letter-spacing:-.01em}
-.sub{color:var(--muted);font-size:14px;margin:0 0 28px;text-align:center;line-height:1.6}
-.cards{display:flex;flex-direction:column;gap:14px;width:100%;max-width:420px}
-.card{display:block;background:var(--surface);border-radius:20px;padding:18px 20px;
-  text-decoration:none;color:inherit;border:1px solid var(--hairline);
-  box-shadow:0 8px 24px -18px rgba(0,0,0,.4);transition:transform .15s}
-.card:active{transform:scale(.985)}
-.card-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-.icon{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:24px;
-  background:color-mix(in srgb,var(--tone) 16%,transparent)}
-.card h2{font-size:17px;margin:0;font-weight:600}
-.card p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
-.tagrow{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-.tag{font-size:11px;padding:3px 9px;border-radius:99px;background:var(--fill);color:var(--muted)}
-footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center;line-height:1.7}
-footer code{font-family:ui-monospace,Menlo,monospace;background:var(--fill);padding:1px 5px;border-radius:5px}
+html,body{margin:0;padding:0;max-width:100%;overflow-x:clip}
+body{background:var(--bg);background-image:var(--bg-grad);background-attachment:fixed;color:var(--ink);font-family:var(--sans);min-height:100dvh}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+
+.hero{position:relative;overflow:hidden;max-width:560px;margin:0 auto;padding:56px 24px 30px;text-align:center}
+.hero-inner{position:relative;z-index:2}
+.badge{display:inline-block;font-size:12px;font-weight:700;color:var(--blue);
+  background:color-mix(in srgb,var(--blue) 12%,transparent);padding:6px 14px;border-radius:99px;margin-bottom:16px}
+h1{font-size:clamp(26px,7vw,38px);line-height:1.25;margin:0 0 12px;font-weight:800;letter-spacing:-.02em}
+.lead{margin:0 auto;color:var(--muted);font-size:14px;line-height:1.7;max-width:340px}
+
+/* 波浪 */
+.wave{position:absolute;pointer-events:none;opacity:.6}
+.wave-a{top:-10px;left:-10%;width:120%;height:100px;transform:rotate(-6deg)}
+.wave-b{bottom:-16px;right:-10%;width:120%;height:100px;transform:rotate(174deg);opacity:.4}
+
+/* 漂浮图标 */
+.float-ico{position:absolute;width:56px;height:56px;border-radius:17px;display:grid;place-items:center;font-size:28px;
+  background:linear-gradient(150deg,#ffffff,#eef0ff);box-shadow:0 14px 28px -10px rgba(70,60,140,.3);z-index:1;
+  animation:float 6s ease-in-out infinite}
+html[data-theme=dark] .float-ico{background:linear-gradient(150deg,#34334a,#26253a)}
+.f1{top:12%;left:7%;transform:rotate(-12deg)}
+.f2{top:18%;right:8%;animation-delay:-1.5s;transform:rotate(10deg)}
+.f3{bottom:12%;left:11%;animation-delay:-3s;transform:rotate(8deg)}
+.f4{bottom:16%;right:9%;animation-delay:-4.5s;transform:rotate(-8deg)}
+@keyframes float{0%,100%{translate:0 0}50%{translate:0 -12px}}
+
+/* 工具卡片 */
+.cards{position:relative;z-index:2;display:flex;flex-direction:column;gap:14px;width:100%;max-width:520px;margin:8px auto 0;padding:0 20px}
+.card{position:relative;display:block;text-decoration:none;color:inherit;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px;box-shadow:var(--shadow);
+  transition:transform .2s cubic-bezier(.2,.8,.3,1),box-shadow .2s;
+  animation:rise .5s cubic-bezier(.2,.8,.3,1) both}
+.card:nth-child(1){animation-delay:.05s}.card:nth-child(2){animation-delay:.12s}.card:nth-child(3){animation-delay:.19s}
+.card:active{transform:scale(.98)}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.card-top{display:flex;align-items:center;gap:12px;margin-bottom:9px}
+.icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:24px;color:#fff;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--tone) 70%,#fff),var(--tone));
+  box-shadow:0 6px 14px -6px var(--tone);flex:0 0 auto}
+.card h2{font-size:17px;margin:0;font-weight:800;flex:1}
+.arrow{font-size:20px;color:var(--muted);flex:0 0 auto;transition:transform .2s}
+.card:active .arrow{transform:translateX(4px)}
+.card p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.tagrow{display:flex;gap:6px;margin-top:11px;flex-wrap:wrap}
+.tag{font-size:11px;padding:4px 10px;border-radius:99px;background:var(--pill);color:var(--muted);font-weight:600}
+
+footer{position:relative;z-index:2;text-align:center;color:var(--muted);font-size:12px;line-height:1.8;
+  max-width:520px;margin:26px auto 0;padding:0 24px calc(28px + env(safe-area-inset-bottom))}
+footer code{font-family:ui-monospace,Menlo,monospace;background:var(--pill);padding:1px 6px;border-radius:5px}
+.theme-btn{position:fixed;top:14px;right:max(16px,env(safe-area-inset-right));z-index:40;
+  width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--surface) 85%,transparent);
+  backdrop-filter:blur(12px);box-shadow:var(--shadow);font-size:16px;display:grid;place-items:center}
+@media (prefers-reduced-motion:reduce){.float-ico,.card{animation:none}}
 </style>
 </head>
 <body>
-  <h1>星露谷工具箱</h1>
-  <p class="sub">手机上直接用的两个小工具<br>不联网、不装 App，打开就能使</p>
+<button class="theme-btn" id="themeBtn" aria-label="切换深浅色">🌙</button>
 
-  <div class="cards">
-    <a class="card" href="./codes.html" style="--tone:#3e8e5a">
-      <div class="card-top">
-        <div class="icon">📜</div>
-        <h2>物品代码</h2>
-      </div>
-      <p>2350 件物品带原图图标，335 条作弊码。搜中文/英文/ID，点一下就复制。</p>
-      <div class="tagrow">
-        <span class="tag">手机 / i 24</span>
-        <span class="tag">电脑 debug i 24</span>
-      </div>
-    </a>
-
-    <a class="card" href="./fishing.html" style="--tone:#1e6fa8">
-      <div class="card-top">
-        <div class="icon">🎣</div>
-        <h2>钓鱼一键改</h2>
-      </div>
-      <p>改存档：钓鱼等级与经验、附魔铱金鱼竿、整套铱金工具、36 格背包、聊天作弊开关。</p>
-      <div class="tagrow">
-        <span class="tag">选存档 · 改 · 导出</span>
-        <span class="tag">可撤销</span>
-      </div>
-    </a>
-
-    <a class="card" href="./xnb.html" style="--tone:#7a5af5">
-      <div class="card-top">
-        <div class="icon">📦</div>
-        <h2>XNB 拆包合并</h2>
-      </div>
-      <p>拆开 XNB 图集，覆盖新素材 PNG，再打包回 XNB 或导出 PNG。全在手机本机处理。</p>
-      <div class="tagrow">
-        <span class="tag">拆包 · 覆盖 · 打包</span>
-        <span class="tag">不上传</span>
-      </div>
-    </a>
+<section class="hero">
+  <svg class="wave wave-a" viewBox="0 0 400 100" preserveAspectRatio="none"><path d="M0 40 C80 10 160 70 240 40 S360 10 400 40 L400 100 L0 100Z" fill="#dcd4ff"/></svg>
+  <svg class="wave wave-b" viewBox="0 0 400 100" preserveAspectRatio="none"><path d="M0 40 C80 10 160 70 240 40 S360 10 400 40 L400 100 L0 100Z" fill="#ffd9ec"/></svg>
+  <div class="float-ico f1">🎣</div>
+  <div class="float-ico f2">📦</div>
+  <div class="float-ico f3">📜</div>
+  <div class="float-ico f4">🐟</div>
+  <div class="hero-inner">
+    <span class="badge">🌾 手机上直接用的星露谷小工具</span>
+    <h1>你的星露谷<br>随身工具箱</h1>
+    <p class="lead">不联网、不装 App，打开网页就能用<br>改存档、拆素材、查物品码，一站式搞定</p>
   </div>
+</section>
 
-  <footer>
-    作弊码需要先在存档里打开 <code>allowChatCheats</code> —— 钓鱼工具里点一下就行。<br>
-    改存档前请先备份。
-  </footer>
+<div class="cards">
+  <a class="card" href="./fishing.html" style="--tone:#1e6fa8">
+    <div class="card-top">
+      <div class="icon">🎣</div>
+      <h2>钓鱼一键改</h2>
+      <span class="arrow">›</span>
+    </div>
+    <p>直接改存档：钓鱼等级与经验、附魔铱金鱼竿、整套铱金工具、36 格背包，还能一键开聊天作弊。</p>
+    <div class="tagrow"><span class="tag">选存档 / ZIP</span><span class="tag">改 · 导出</span><span class="tag">可撤销</span></div>
+  </a>
+
+  <a class="card" href="./xnb.html" style="--tone:#7a5af5">
+    <div class="card-top">
+      <div class="icon">📦</div>
+      <h2>XNB 拆包合并</h2>
+      <span class="arrow">›</span>
+    </div>
+    <p>拆开 XNB 图集，覆盖新素材 PNG，再打包回 XNB 或导出 PNG。全在手机本机处理，不上传。</p>
+    <div class="tagrow"><span class="tag">拆包 · 覆盖</span><span class="tag">打包 XNB / PNG</span></div>
+  </a>
+
+  <a class="card" href="./codes.html" style="--tone:#3e8e5a">
+    <div class="card-top">
+      <div class="icon">📜</div>
+      <h2>物品代码</h2>
+      <span class="arrow">›</span>
+    </div>
+    <p>2350 件物品带原图，335 条作弊码。搜中文、英文、ID，点一下就复制，还能切手机 / 电脑格式。</p>
+    <div class="tagrow"><span class="tag">手机 / i 24</span><span class="tag">电脑 debug i 24</span></div>
+  </a>
+</div>
+
+<footer>
+  作弊码需先在存档里打开 <code>allowChatCheats</code>（钓鱼工具里点一下即可）<br>
+  改存档前请先备份 · 所有处理都在你的手机本机完成
+</footer>
+
+<script>
+(function(){
+  let t='light';
+  try{ t=localStorage.getItem('sdv-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'); }catch(e){}
+  document.documentElement.dataset.theme=t;
+  const b=document.getElementById('themeBtn');
+  function upd(){ b.textContent=t==='dark'?'☀️':'🌙'; }
+  upd();
+  b.addEventListener('click',()=>{
+    t=t==='dark'?'light':'dark'; document.documentElement.dataset.theme=t;
+    try{ localStorage.setItem('sdv-theme',t); }catch(e){}
+    upd();
+  });
+})();
+</script>
 </body>
 </html>

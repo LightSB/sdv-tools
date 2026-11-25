@@ -33,44 +33,53 @@ const html = `<!doctype html>
 <title>星露谷物品代码与作弊码</title>
 <style>
 :root{
-  --paper:#f2f2f7;--surface:#fff;--ink:#1c1c1e;--muted:#8a8a8e;
-  --hairline:rgba(60,60,67,.12);--accent:#3e8e5a;--accent-ink:#fff;
-  --fill:rgba(120,120,128,.09);--code-bg:rgba(62,142,90,.12);--code-ink:#2f7d4f;
-  --warn-bg:rgba(217,83,79,.12);--warn-ink:#b3403c;
+  --paper:#f7f6fb;--bg-grad:linear-gradient(180deg,#f1eeff 0%,#fbf1f7 42%,#f7f6fb 100%);
+  --surface:#fff;--ink:#1b1b28;--muted:#9292a6;
+  --hairline:rgba(28,28,60,.08);--accent:#3d7bf5;--accent-ink:#fff;
+  --fill:#f1f0f6;--code-bg:rgba(61,123,245,.12);--code-ink:#3d7bf5;
+  --warn-bg:rgba(226,80,79,.12);--warn-ink:#e2504f;
+  --dark:#1b1b28;--dark-ink:#fff;--radius:22px;--shadow:0 10px 34px -16px rgba(66,52,140,.22);
   --mono:ui-monospace,"SF Mono",Menlo,monospace;
   --rounded:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
-  --sans:-apple-system,system-ui,"PingFang SC",sans-serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Rounded","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
   color-scheme:light dark;
 }
-@media (prefers-color-scheme:dark){
-  :root{--paper:#000;--surface:#1c1c1e;--ink:#f2f2f7;--muted:#8d8d93;
-    --hairline:rgba(235,235,245,.12);--accent:#4fbf7b;--accent-ink:#06210f;
-    --fill:rgba(120,120,128,.2);--code-bg:rgba(79,191,123,.16);--code-ink:#6fd79a;
-    --warn-bg:rgba(217,83,79,.2);--warn-ink:#ff9a96;}
+html[data-theme=dark]{
+  --paper:#131219;--bg-grad:linear-gradient(180deg,#1e1b2c 0%,#1b1720 42%,#131219 100%);
+  --surface:#23222e;--ink:#f5f4fb;--muted:#9b9aae;
+  --hairline:rgba(255,255,255,.1);--accent:#5aa0ff;--accent-ink:#fff;
+  --fill:#2e2d3b;--code-bg:rgba(90,160,255,.18);--code-ink:#8fb4ff;
+  --warn-bg:rgba(226,80,79,.2);--warn-ink:#ff9a96;
+  --dark:#f5f4fb;--dark-ink:#1b1b28;--shadow:0 10px 34px -16px rgba(0,0,0,.6);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans)}
+html,body{margin:0;max-width:100%;overflow-x:clip}
+body{background:var(--paper);background-image:var(--bg-grad);background-attachment:fixed;color:var(--ink);font-family:var(--sans);min-height:100dvh}
 button{font:inherit;color:inherit;border:0;background:none;padding:0;text-align:left;cursor:pointer}
 .wrap{max-width:760px;margin:0 auto;padding:0 0 calc(28px + env(safe-area-inset-bottom))}
-header{position:sticky;top:0;z-index:10;padding:calc(8px + env(safe-area-inset-top)) 14px 8px;
-  background:color-mix(in srgb,var(--paper) 92%,transparent);
+header{position:-webkit-sticky;position:sticky;top:0;z-index:30;padding:10px 16px;
+  padding-top:max(10px,env(safe-area-inset-top));
+  background:color-mix(in srgb,var(--surface) 82%,transparent);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--hairline)}
-.brand{font-family:var(--rounded);font-weight:700;font-size:16px;padding:2px 2px 8px;display:flex;align-items:baseline;gap:8px}
-.brand small{font-weight:400;font-size:11.5px;color:var(--muted)}
-.tabs{display:flex;gap:3px;padding:3px;background:var(--fill);border-radius:12px}
-.tab{flex:1;min-height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;
-  font-family:var(--rounded);font-size:14px;font-weight:500}
-.tab.on{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:600}
+.brand{font-family:var(--rounded);font-weight:800;font-size:15px;padding:0 0 10px;display:flex;align-items:center;gap:9px}
+.brand-ico{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:16px;flex:0 0 auto;
+  background:linear-gradient(145deg,#5aa0ff,#3d7bf5);box-shadow:0 4px 10px -4px #3d7bf5;color:#fff}
+.brand small{font-weight:400;font-size:11.5px;color:var(--muted);margin-left:auto}
+.theme-btn{width:30px;height:30px;border-radius:50%;background:var(--fill);font-size:14px;display:grid;place-items:center;flex:0 0 auto}
+.tabs{display:flex;gap:3px;padding:3px;background:var(--fill);border-radius:99px}
+.tab{flex:1;min-height:38px;border-radius:99px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--rounded);font-size:13.5px;font-weight:600;color:var(--muted)}
+.tab.on{background:var(--dark);color:var(--dark-ink);box-shadow:0 6px 14px -8px rgba(0,0,0,.5)}
 .search{position:relative;margin-top:10px}
-.search input{width:100%;height:42px;padding:0 38px 0 38px;border-radius:13px;border:1px solid var(--hairline);
-  background:var(--surface);color:var(--ink);font-size:16px;font-family:inherit;-webkit-appearance:none;appearance:none}
+.search input{width:100%;height:44px;padding:0 38px 0 40px;border-radius:99px;border:1px solid var(--hairline);
+  background:var(--surface);color:var(--ink);font-size:16px;font-family:inherit;-webkit-appearance:none;appearance:none;box-shadow:var(--shadow)}
 .search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
 .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted)}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:9px 0 3px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 11px;border-radius:99px;
   background:var(--surface);border:1px solid var(--hairline);font-family:var(--rounded);font-size:13px}
-.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.chip.on{background:linear-gradient(145deg,#5aa0ff,#3d7bf5);border-color:transparent;color:#fff;font-weight:600;box-shadow:0 4px 10px -4px #3d7bf5}
 .chip b{font-family:var(--mono);font-size:10.5px;font-weight:400;color:var(--muted)}
 .chip.on b{color:color-mix(in srgb,var(--accent-ink) 72%,transparent)}
 main{padding:10px 14px}
@@ -88,8 +97,8 @@ main{padding:10px 14px}
 .group-title{display:flex;align-items:baseline;gap:6px;font-family:var(--rounded);font-size:13px;color:var(--muted);
   margin:14px 4px 6px;font-weight:600}
 .group-title b{font-family:var(--mono);font-size:11px;font-weight:400}
-ul.items{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:16px;overflow:hidden;
-  box-shadow:0 1px 2px rgba(0,0,0,.05)}
+ul.items{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:var(--radius);overflow:hidden;
+  box-shadow:var(--shadow)}
 ul.items li+li>*{border-top:1px solid var(--hairline)}
 .row{width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px}
 .row:active{background:var(--fill)}
@@ -122,13 +131,21 @@ ul.items li+li>*{border-top:1px solid var(--hairline)}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);
   max-width:86vw;padding:9px 16px;border-radius:99px;background:rgba(28,28,30,.93);color:#fff;font-size:13px;
   z-index:50;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* iOS 风格左滑删除（仅作弊码页） */
+.swipe-item{position:relative;overflow:hidden;background:var(--warn-ink)}
+.swipe-del{position:absolute;top:0;right:0;bottom:0;width:84px;display:flex;align-items:center;justify-content:center;
+  background:var(--warn-ink);color:#fff;font-family:var(--rounded);font-size:14px;font-weight:700}
+.swipe-front{position:relative;background:var(--surface);transition:transform .22s cubic-bezier(.2,.8,.3,1);will-change:transform}
+.swipe-front.open{transform:translateX(-84px)}
+.code-row{width:100%}
 .hint{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <div class="brand">星露谷物品码 <small>物品 ${ITEMS.length} · 作弊码 ${codeTotal}</small></div>
+  <div class="brand"><span class="brand-ico">📜</span><span>星露谷物品码</span><small>物品 ${ITEMS.length} · 作弊码 ${codeTotal}</small><button class="theme-btn" id="themeBtn" aria-label="切换深浅色">🌙</button></div>
   <div class="tabs" role="tablist">
     <button class="tab on" role="tab" data-tab="items">物品</button>
     <button class="tab" role="tab" data-tab="codes">作弊码</button>
@@ -148,6 +165,21 @@ const SPRITES = ${JSON.stringify(SPRITES)};
 const CATEGORIES = ${JSON.stringify(CATEGORIES)};
 const CODE_GROUPS = ${JSON.stringify(CODE_GROUPS)};
 
+/* 主题切换：跟随钓鱼/XNB 工具一致 */
+(function(){
+  let t='light';
+  try{ t=localStorage.getItem('sdv-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'); }catch(e){}
+  document.documentElement.dataset.theme=t;
+  function upd(){ const b=document.getElementById('themeBtn'); if(b) b.textContent=t==='dark'?'☀️':'🌙'; }
+  upd();
+  document.addEventListener('click',e=>{
+    if(e.target.closest('#themeBtn')){
+      t=t==='dark'?'light':'dark'; document.documentElement.dataset.theme=t;
+      try{ localStorage.setItem('sdv-theme',t); }catch(e){}
+      upd();
+    }
+  });
+})();
 const PAGE = 200;
 const SORTS = [['default','默认'],['zh','中文'],['en','英文'],['id','ID']];
 const zhColl = new Intl.Collator('zh-Hans', { sensitivity: 'base' });
@@ -155,6 +187,9 @@ const enColl = new Intl.Collator('en', { sensitivity: 'base' });
 
 const state = { tab:'items', q:'', cat:'all', ccat:'all', sort:'default', dir:'asc', limit:PAGE,
   target: (function(){ try { return localStorage.getItem('sdv-copy-target-v1') === 'pc' ? 'pc' : 'mobile'; } catch(e){ return 'mobile'; } })() };
+
+/* 已删除的作弊码（左滑删除，本地持久化） */
+try{ state.deleted = new Set(JSON.parse(localStorage.getItem('sdv-codes-deleted')||'[]')); }catch(e){ state.deleted = new Set(); }
 
 const $ = (s) => document.querySelector(s);
 const main = $('#main');
@@ -220,6 +255,7 @@ function codeList(){
   return CODE_GROUPS
     .filter(g => state.ccat === 'all' || g.parent === state.ccat)
     .map(g => ({ ...g, list: g.items.filter(c => {
+      if (state.deleted && state.deleted.has(g.id + '::' + c.id)) return false;
       if (!q) return true;
       return (c.cmd + ' ' + c.zh + ' ' + (c.en||'') + ' ' + (c.note||'')).toLowerCase().includes(q);
     }) }))
@@ -288,12 +324,13 @@ function render(){
         groups.map(g => '<div class="group-title">' + esc(g.zh) + ' <b>' + g.list.length + '</b></div>' +
           '<ul class="items">' + g.list.map(c => {
             const cmd = state.target === 'pc' ? pcOf(c.cmd) : c.cmd;
-            return '<li><button class="code-row' + (c.warn ? ' warn' : '') + (c.stale ? ' stale' : '') + '" data-copy="' + esc(cmd) + '">' +
+            const key = g.id + '::' + c.id;
+            return '<li class="swipe-item"><div class="swipe-del" data-del="' + esc(key) + '">删除</div><div class="swipe-front"><button class="code-row' + (c.warn ? ' warn' : '') + (c.stale ? ' stale' : '') + '" data-copy="' + esc(cmd) + '">' +
               '<span class="cmdline"><span class="cmd">' + esc(cmd) + '</span>' +
               (c.warn ? '<span class="badge warn">危险</span>' : '') +
               (c.stale ? '<span class="badge stale">过时</span>' : '') + '</span>' +
               '<span class="code-meta">' + esc(c.zh || '') + (c.en ? '<span class="meta-en"> · ' + esc(c.en) + '</span>' : '') + '</span>' +
-              (c.note ? '<p class="note">' + noteHTML(noteForTarget(c.note, state.target)) + '</p>' : '') + '</button></li>';
+              (c.note ? '<p class="note">' + noteHTML(noteForTarget(c.note, state.target)) + '</p>' : '') + '</button></div></li>';
           }).join('') + '</ul>').join(''));
   }
 }
@@ -315,6 +352,59 @@ function showToast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.style.display = 'none'; }, 1800);
 }
+
+/* ---------- 作弊码左滑删除（iOS 风格） ---------- */
+(function(){
+  let sx=0, sy=0, front=null, openFront=null, moved=false, locked=false;
+  function closeAll(except){ if(openFront && openFront!==except){ openFront.classList.remove('open'); openFront.style.transform=''; openFront=null; } }
+  main.addEventListener('touchstart',e=>{
+    const f=e.target.closest('.swipe-front');
+    if(!f || state.tab!=='codes'){ return; }
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY; front=f; moved=false;
+    locked=!!f.closest('.swipe-item').querySelector('.swipe-del') && true;
+    const isOpen=f.classList.contains('open');
+    // 记录基础偏移
+    f.dataset.base = isOpen ? '-84' : '0';
+  },{passive:true});
+  main.addEventListener('touchmove',e=>{
+    if(!front || state.tab!=='codes') return;
+    const dx=e.touches[0].clientX-sx, dy=e.touches[0].clientY-sy;
+    if(!moved && Math.abs(dy)>Math.abs(dx)){ front=null; return; } // 纵向滚动交给页面
+    if(Math.abs(dx)>6) moved=true;
+    if(!moved) return;
+    let base=parseInt(front.dataset.base||'0',10);
+    let x=base+dx;
+    if(x>0) x=x*0.25;           // 右滑阻尼
+    if(x<-110) x=-110;
+    front.style.transition='none';
+    front.style.transform='translateX('+x+'px)';
+  },{passive:true});
+  main.addEventListener('touchend',e=>{
+    if(!front || state.tab!=='codes'){ front=null; return; }
+    const dx=(e.changedTouches[0].clientX-sx);
+    const base=parseInt(front.dataset.base||'0',10);
+    const x=base+dx;
+    front.style.transition='';
+    front.style.transform='';
+    if(x < -42){ closeAll(front); front.classList.add('open'); openFront=front; }
+    else { front.classList.remove('open'); if(openFront===front) openFront=null; }
+    front=null;
+  },{passive:true});
+  // 点删除 / 点其他地方关闭
+  document.addEventListener('click',e=>{
+    const del=e.target.closest('[data-del]');
+    if(del){
+      e.stopPropagation();
+      const key=del.dataset.del;
+      state.deleted.add(key);
+      try{ localStorage.setItem('sdv-codes-deleted',JSON.stringify([...state.deleted])); }catch(err){}
+      showToast('已删除该作弊码');
+      render();
+      return;
+    }
+    if(state.tab==='codes' && !e.target.closest('.swipe-front')) closeAll();
+  },true);
+})();
 
 document.addEventListener('click', async (e) => {
   const el = e.target.closest('[data-tab],[data-cat],[data-ccat],[data-sort],[data-dir],[data-target],[data-copy],[data-more]');

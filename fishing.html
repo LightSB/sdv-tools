@@ -319,6 +319,9 @@ const S = {
   fileName:'', raw:'', work:'', doc:null, sum:null,
   tab:'fish', level:60, exp:15000, withRod:true,
   picked:KIT.map(() => true), log:[], error:'', toast:'', undo:null,
+  zip:null,          // 从 ZIP 导入时保存 { z, mainEntry }，用于原样重打包导出
+  zipBase:'',        // ZIP 主存档在包内的原始文件名（用于导出包内命名）
+  zipOrigin:'',      // 原始 ZIP 文件名（用于导出包命名）
 };
 
 function summarize(){
@@ -426,6 +429,37 @@ async function exportText(text, name){
     setTimeout(() => URL.revokeObjectURL(url), 15000);
     S.toast = '已生成文件，到「下载」里查看'; render();
   } catch(e){ S.error = '无法保存：' + e.message; render(); }
+}
+
+/* 统一导出入口：ZIP 来源 → 重打包成 ZIP（文件名加 -改）；单文件来源 → 原样文本导出 */
+async function exportSave(){
+  if (S.zip) return exportZip(S.work, false, '-改');
+  return exportText(S.work, S.fileName||'SaveGame');
+}
+/* 把 text 作为主存档替换进原 ZIP，打包下载；suffix 附加在文件名末尾 */
+async function exportZip(text, isBackup, suffix){
+  const check = verify(text);
+  if (!check.ok){ S.error = '导出失败：' + check.reason; render(); return; }
+  try{
+    const bytes = new TextEncoder().encode(text);
+    const zipped = await buildZipWith(S.zip.z, S.zip.mainEntry, bytes, false);
+    const blob = new Blob([zipped], { type:'application/zip' });
+    const base = (S.zipOrigin || S.zipBase || '存档');
+    const name = base + suffix + '.zip';
+    const file = new File([blob], name, { type:'application/zip' });
+    try{
+      if (navigator.canShare && navigator.canShare({ files:[file] })){
+        await navigator.share({ files:[file], title:name });
+        S.toast = '已交给系统分享：' + name; render(); return;
+      }
+    }catch(e){ if (e && e.name==='AbortError') return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 15000);
+    S.toast = '已生成 ' + name + '，到「下载」里查看'; render();
+  }catch(e){ S.error = '打包 ZIP 失败：' + e.message; render(); }
 }
 
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -570,7 +604,7 @@ function render(){
       (S.error?'<div class="banner error">'+esc(S.error)+'</div>':'')+
     '</div>'+
     '<div class="dock">'+
-      '<button class="cta" id="exp">导出存档</button>'+
+      '<button class="cta" id="exp">'+(S.zip?'导出 ZIP（-改）':'导出存档')+'</button>'+
       '<div class="dock-row">'+
         '<button class="ghost" id="bak">导出原始备份</button>'+
         '<button class="ghost" id="undo"'+(S.undo?'':' disabled')+'>撤销</button>'+
@@ -584,8 +618,11 @@ function render(){
 
 function bind(){
   document.getElementById('swap').addEventListener('click',()=>document.getElementById('file').click());
-  document.getElementById('exp').addEventListener('click',()=>exportText(S.work,S.fileName||'SaveGame'));
-  document.getElementById('bak').addEventListener('click',()=>exportText(S.raw,(S.fileName||'SaveGame')+'_备份'));
+  document.getElementById('exp').addEventListener('click',exportSave);
+  document.getElementById('bak').addEventListener('click',()=>{
+    if (S.zip) exportZip(S.raw, false, '_备份');
+    else exportText(S.raw,(S.fileName||'SaveGame')+'_备份');
+  });
   document.getElementById('undo').addEventListener('click',undo);
   document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{S.tab=b.dataset.tab;render();}));
   document.querySelectorAll('[data-rod]').forEach(b=>b.addEventListener('click',()=>{S.withRod=!S.withRod;render();}));
@@ -688,6 +725,17 @@ document.getElementById('file').addEventListener('change', async e => {
       });
     }
     loadText(text, picked.name + (picked.fromZip ? '（ZIP）' : ''));
+    // 记录 ZIP 上下文，导出时据此重打包（只替换主存档，其余字节原样）
+    if (picked.fromZip){
+      // 找到这次导入的 ZIP 原始文件名
+      const zf = all.find(f => /\.zip$/i.test(f.name));
+      S.zip = { z: picked.z, mainEntry: picked.en };
+      S.zipBase = picked.name;
+      S.zipOrigin = zf ? zf.name.replace(/\.zip$/i,'') : (S.zipBase || '存档');
+    } else {
+      S.zip = null; S.zipBase=''; S.zipOrigin='';
+    }
+    render();
     if (all.length > 1) toast('已从 ' + all.length + ' 个来源里识别出主存档：' + picked.name);
   } catch(err){
     // 读取/解析失败先清空旧的加载状态，避免错误 banner 叠在上一份存档界面上误导
@@ -712,15 +760,30 @@ function zipEntries(buf){
   const out = [];
   for (let i = 0; i < count; i++){
     if (dv.getUint32(off, true) !== 0x02014b50) break; // 中央目录文件头
-    const method   = dv.getUint16(off + 10, true);
-    const compSize = dv.getUint32(off + 20, true);
-    const nameLen  = dv.getUint16(off + 28, true);
-    const extraLen = dv.getUint16(off + 30, true);
-    const cmtLen   = dv.getUint16(off + 32, true);
-    const localOff = dv.getUint32(off + 42, true);
+    const flags     = dv.getUint16(off + 8, true);
+    const method    = dv.getUint16(off + 10, true);
+    const modTime   = dv.getUint16(off + 12, true);
+    const modDate   = dv.getUint16(off + 14, true);
+    const crc32v    = dv.getUint32(off + 16, true);
+    const compSize  = dv.getUint32(off + 20, true);
+    const uncompSize= dv.getUint32(off + 24, true);
+    const nameLen   = dv.getUint16(off + 28, true);
+    const extraLen  = dv.getUint16(off + 30, true);
+    const cmtLen    = dv.getUint16(off + 32, true);
+    const diskStart = dv.getUint16(off + 34, true);
+    const intAttr   = dv.getUint16(off + 36, true);
+    const extAttr   = dv.getUint32(off + 38, true);
+    const localOff  = dv.getUint32(off + 42, true);
+    const centralStart = off;
+    const centralLen = 46 + nameLen + extraLen + cmtLen;
     const rawName  = u8.subarray(off + 46, off + 46 + nameLen);
     const fullName = dec.decode(rawName);
-    out.push({ fullName, method, compSize, localOff });
+    // 本地头里的名字/额外字段长度（可能与中央目录不同）
+    const localNameLen  = dv.getUint16(localOff + 26, true);
+    const localExtraLen = dv.getUint16(localOff + 28, true);
+    out.push({ fullName, flags, method, modTime, modDate, crc32:crc32v, compSize, uncompSize,
+      nameLen, extraLen, cmtLen, diskStart, intAttr, extAttr, localOff,
+      centralStart, centralLen, localNameLen, localExtraLen });
     off += 46 + nameLen + extraLen + cmtLen;
   }
   return { dv, u8, out };
@@ -739,6 +802,104 @@ async function inflateRaw(bytes){
   const ds = new DecompressionStream('deflate-raw');
   const stream = new Blob([bytes]).stream().pipeThrough(ds);
   return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+/* ——— 重新打包 ZIP：只替换主存档条目，其余条目字节级原样保留 ——— */
+function crc32(u8){
+  let c = 0xFFFFFFFF;
+  for (let i=0;i<u8.length;i++){
+    c ^= u8[i];
+    for (let k=0;k<8;k++) c = (c>>>1) ^ (0xEDB88320 & -(c&1));
+  }
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function crc16le(n){ const b=new Uint8Array(2); new DataView(b.buffer).setUint16(0,n,true); return b; }
+function crc32le(n){ const b=new Uint8Array(4); new DataView(b.buffer).setUint32(0,n>>>0,true); return b; }
+function concatU8(arrs){
+  let len=0; for (const a of arrs) len+=a.length;
+  const out=new Uint8Array(len); let p=0;
+  for (const a of arrs){ out.set(a,p); p+=a.length; }
+  return out;
+}
+/* 用 newMainBytes 替换 mainEntry 后重建 ZIP。newMainBytes 为 UTF-8 编码的新存档内容。 */
+async function buildZipWith(z, mainEntry, newMainBytes, useLz4){
+  const { dv, u8, out } = z;
+  const enc = new TextEncoder();
+  const newCrc = crc32(newMainBytes);
+  // 若原条目是 deflate，尝试用 CompressionStream 重压缩；失败则退回 store(0)
+  let newComp=null, newMethod=0;
+  if (mainEntry.method===8 && typeof CompressionStream!=='undefined' && !useLz4){
+    try{
+      const cs=new CompressionStream('deflate-raw');
+      const stream=new Blob([newMainBytes]).stream().pipeThrough(cs);
+      newComp=new Uint8Array(await new Response(stream).arrayBuffer());
+      newMethod=8;
+    }catch(e){ newComp=null; }
+  }
+  if (!newComp){ newComp=newMainBytes; newMethod=0; }
+  const newCompSize=newComp.length, newUncompSize=newMainBytes.length;
+
+  // 计算每个条目 local 段的原始字节（含数据），主存档条目用新数据重建
+  const localSegs=[];  // {entry, headerAndData}
+  const newLocalOff={};
+  let running=0;
+  for (const en of out){
+    let headerAndData;
+    const lName = u8.subarray(en.localOff+30, en.localOff+30+en.localNameLen);
+    const lExtra = u8.subarray(en.localOff+30+en.localNameLen, en.localOff+30+en.localNameLen+en.localExtraLen);
+    if (en===mainEntry){
+      // 重建 local file header（method 用新值，CRC/大小用新值），其余字段沿用原条目
+      const h=concatU8([
+        crc32le(0x04034b50), crc16le(20), crc16le(en.flags), crc16le(newMethod),
+        crc16le(en.modTime), crc16le(en.modDate), crc32le(newCrc),
+        crc32le(newCompSize), crc32le(newUncompSize),
+        crc16le(en.localNameLen), crc16le(en.localExtraLen), lName, lExtra, newComp
+      ]);
+      headerAndData=h;
+    } else {
+      const data=untouchedBytes(z,en); // 原始压缩数据（store 或 deflate）
+      const h=concatU8([
+        crc32le(0x04034b50), crc16le(20), crc16le(en.flags), crc16le(en.method),
+        crc16le(en.modTime), crc16le(en.modDate), crc32le(en.crc32),
+        crc32le(en.compSize), crc32le(en.uncompSize),
+        crc16le(en.localNameLen), crc16le(en.localExtraLen), lName, lExtra, data
+      ]);
+      headerAndData=h;
+    }
+    newLocalOff[out.indexOf(en)]=running;
+    localSegs.push(headerAndData);
+    running+=headerAndData.length;
+  }
+  const localBlob=concatU8(localSegs);
+  const cdOffset=localBlob.length;
+
+  // 重建中央目录
+  const cdSegs=[];
+  out.forEach((en,idx)=>{
+    const cName=u8.subarray(en.centralStart+46, en.centralStart+46+en.nameLen);
+    const cExtra=u8.subarray(en.centralStart+46+en.nameLen, en.centralStart+46+en.nameLen+en.extraLen);
+    const cCmt=u8.subarray(en.centralStart+46+en.nameLen+en.extraLen, en.centralStart+en.centralLen);
+    const isMain=en===mainEntry;
+    const method=isMain?newMethod:en.method;
+    const crc=isMain?newCrc:en.crc32;
+    const csz=isMain?newCompSize:en.compSize;
+    const usz=isMain?newUncompSize:en.uncompSize;
+    const cd=concatU8([
+      crc32le(0x02014b50), crc16le(20), crc16le(0), crc16le(en.flags), crc16le(method),
+      crc16le(en.modTime), crc16le(en.modDate), crc32le(crc), crc32le(csz), crc32le(usz),
+      crc16le(en.nameLen), crc16le(en.extraLen), crc16le(en.cmtLen),
+      crc16le(en.diskStart), crc16le(en.intAttr), crc32le(en.extAttr), crc32le(newLocalOff[idx]),
+      cName, cExtra, cCmt
+    ]);
+    cdSegs.push(cd);
+  });
+  const cdBlob=concatU8(cdSegs);
+  // EOCD
+  const eocd=concatU8([
+    crc32le(0x06054b50), crc16le(0), crc16le(0),
+    crc16le(out.length), crc16le(out.length), crc32le(cdBlob.length), crc32le(cdOffset), crc16le(0)
+  ]);
+  return concatU8([localBlob, cdBlob, eocd]);
 }
 
 render();
