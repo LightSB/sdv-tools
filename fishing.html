@@ -459,8 +459,8 @@ function render(){
         '<div class="intro-badge">🎣 星露谷物语 · 存档小工具</div>'+
         '<h1>hi 农夫，<span class="inl-ico">＋</span>这里是<br>属于你的钓鱼修改器</h1>'+
         '<p>钓鱼等级、经验、附魔铱金鱼竿、整套铱金工具、36 格背包与游戏内作弊开关，一站式搞定。</p>'+
-        '<button class="pill-btn dark" id="pick">选择存档 <span>→</span></button>'+
-        '<p class="tip">选「农场名_数字」的主存档（如 Anhe_454838861）· 可一次全选多个，自动挑出正确的 · 动手前先备份</p>'+
+        '<button class="pill-btn dark" id="pick">选择存档文件 <span>→</span></button>'+
+        '<p class="tip">选「农场名_数字」的主存档（如 期待遇见光_776126006 或 qidai_776126006）或 ZIP 压缩包 · 一次可全选多个，自动挑出正确的 · 动手前先备份</p>'+
         (S.error?'<div class="banner error">'+esc(S.error)+'</div>':'')+
       '</div></div>';
     bindTheme();
@@ -478,7 +478,6 @@ function render(){
         '<div class="row"><label>钓鱼等级</label><input id="lv" inputmode="numeric" value="'+S.level+'"></div>'+
         '<div class="row"><label>钓鱼经验</label><input id="ex" inputmode="numeric" value="'+S.exp+'"></div>'+
       '</section>'+
-      '<p class="footnote">游戏界面按 10 级画，数值本身照写。</p>'+
       '<section class="card list">'+
         '<button class="entry '+(S.withRod?'on':'')+'" data-rod="1" style="border-bottom:none">'+
           '<span class="check">'+(S.withRod?'✓':'')+'</span>'+
@@ -613,34 +612,106 @@ function saveIdOf(name){
   return m ? Number(m[1]) : 0;
 }
 
-document.getElementById('file').addEventListener('change', e => {
+/* 从一批「带 name 的对象」里挑出主存档 —— 识别规则与原来完全一致，未作改动 */
+function pickMainSave(items){
+  const good = items.filter(x => isMainSaveName(x.name));
+  if (!good.length) return null;
+  good.sort((a, b) => saveIdOf(b.name) - saveIdOf(a.name)); // 多个取末尾数字最大的（最新存档）
+  return good[0];
+}
+
+/* 一个入口同时吃「存档主文件」和「ZIP 压缩包」，两者都用同一套 pickMainSave 规则识别 */
+document.getElementById('file').addEventListener('change', async e => {
   const all = Array.from(e.target.files || []);
   e.target.value = '';
   if (!all.length) return;
-  // 精准识别：从所选文件里挑出符合「农场名_数字」的主存档
-  const good = all.filter(f => isMainSaveName(f.name));
-  if (!good.length){
-    const names = all.slice(0, 3).map(f => f.name).join('、');
-    S.error = '没找到主存档。请选形如「Anhe_454838861」的文件（农场名_数字、无扩展名）。' +
-      '你选的是：' + names + (all.length > 3 ? ' 等' : '') +
-      ' —— 带 _old / _SVEMERG / _SaveGameInfo 的都不是主存档。';
-    render();
-    return;
-  }
-  // 若一次选了多个主存档，取末尾数字最大的那个（最新的存档）
-  good.sort((a, b) => saveIdOf(b.name) - saveIdOf(a.name));
-  const picked = good[0];
-  const skipped = all.length - 1;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      loadText(String(reader.result), picked.name);
-      if (skipped > 0) toast('已从 ' + all.length + ' 个文件里识别出主存档：' + picked.name);
-    } catch(err){ S.error = err.message; render(); }
-  };
-  reader.onerror = () => { S.error = '读取文件失败'; render(); };
-  reader.readAsText(picked, 'utf-8');
+  try {
+    const cands = [];
+    for (const f of all){
+      if (/\.zip$/i.test(f.name)){
+        const z = zipEntries(await f.arrayBuffer());
+        for (const en of z.out){
+          if (/\/$/.test(en.fullName)) continue;                 // 跳过目录条目
+          if (/\/__MACOSX\//.test(en.fullName)) continue;        // 跳过 mac 元数据
+          const name = en.fullName.split(/[\\/]/).pop();          // 去掉包内路径，只留文件名
+          cands.push({ name, fromZip:true, z, en });
+        }
+      } else {
+        cands.push({ name: f.name, fromZip:false, file:f });
+      }
+    }
+    const picked = pickMainSave(cands);
+    if (!picked){
+      const names = cands.slice(0, 5).map(x => x.name).join('、');
+      S.error = '没找到主存档。请选形如「期待遇见光_776126006」的文件（农场名_数字、无扩展名），或直接选包含它的 ZIP 压缩包。' +
+        '你选的是：' + (names || '（空）') + (cands.length > 5 ? ' 等' : '') +
+        ' —— 带 _old / _SVEMERG / _SaveGameInfo 的都不是主存档。';
+      render();
+      return;
+    }
+    let text;
+    if (picked.fromZip){
+      const bytes = picked.en.method === 0
+        ? untouchedBytes(picked.z, picked.en)   // 0 = 不压缩直接存储
+        : await inflateRaw(untouchedBytes(picked.z, picked.en)); // 8 = deflate 压缩
+      text = new TextDecoder('utf-8').decode(bytes);
+    } else {
+      text = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result));
+        r.onerror = () => rej(new Error('读取文件失败'));
+        r.readAsText(picked.file, 'utf-8');
+      });
+    }
+    loadText(text, picked.name + (picked.fromZip ? '（ZIP）' : ''));
+    if (all.length > 1) toast('已从 ' + all.length + ' 个来源里识别出主存档：' + picked.name);
+  } catch(err){ S.error = '读取失败：' + err.message; render(); }
 });
+
+/* ——— ZIP 压缩包支持：解压后复用同一套 main-save 识别规则 ——— */
+function zipEntries(buf){
+  const dv = new DataView(buf), u8 = new Uint8Array(buf);
+  const dec = new TextDecoder('utf-8');
+  // 找 End Of Central Directory 记录（签名 0x06054b50），从尾部最多回看 64KB+22
+  let eocd = -1;
+  const min = Math.max(0, u8.length - 65557);
+  for (let i = u8.length - 22; i >= min; i--){
+    if (dv.getUint32(i, true) === 0x06054b50){ eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('压缩包格式不对：找不到目录结尾（可能不是标准 ZIP）');
+  const count = dv.getUint16(eocd + 10, true);
+  let off = dv.getUint32(eocd + 16, true); // 中央目录偏移
+  const out = [];
+  for (let i = 0; i < count; i++){
+    if (dv.getUint32(off, true) !== 0x02014b50) break; // 中央目录文件头
+    const method   = dv.getUint16(off + 10, true);
+    const compSize = dv.getUint32(off + 20, true);
+    const nameLen  = dv.getUint16(off + 28, true);
+    const extraLen = dv.getUint16(off + 30, true);
+    const cmtLen   = dv.getUint16(off + 32, true);
+    const localOff = dv.getUint32(off + 42, true);
+    const rawName  = u8.subarray(off + 46, off + 46 + nameLen);
+    const fullName = dec.decode(rawName);
+    out.push({ fullName, method, compSize, localOff });
+    off += 46 + nameLen + extraLen + cmtLen;
+  }
+  return { dv, u8, out };
+}
+function untouchedBytes(z, e){
+  const { dv, u8 } = z;
+  if (dv.getUint32(e.localOff, true) !== 0x04034b50) throw new Error('压缩包里该文件头损坏');
+  const nameLen = dv.getUint16(e.localOff + 26, true);
+  const extraLen = dv.getUint16(e.localOff + 28, true);
+  const start = e.localOff + 30 + nameLen + extraLen;
+  return u8.subarray(start, start + e.compSize);
+}
+async function inflateRaw(bytes){
+  if (typeof DecompressionStream === 'undefined')
+    throw new Error('当前浏览器不支持解压 ZIP（deflate），请用最新版 Chrome / Edge / Safari 打开');
+  const ds = new DecompressionStream('deflate-raw');
+  const stream = new Blob([bytes]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
 
 render();
 </script>
