@@ -1,0 +1,159 @@
+classDiagram
+    direction LR
+
+    class ValidateResponse {
+        +number user_id
+        +string key
+        +string name
+        +boolean is_premium
+        +boolean is_supporter
+    }
+    class Mod {
+        +number mod_id
+        +string name
+        +string summary
+        +string description
+        +NexusAuthor[] authors
+        +string picture_url
+    }
+    class NexusAuthor {
+        +number user_id
+        +string name
+    }
+    class ModFile {
+        +number file_id
+        +string file_name
+        +string version
+        +string category_name
+        +boolean is_primary
+        +number size_kb
+        +string uploaded_at
+    }
+    class DownloadLink {
+        +string URI
+    }
+    class Prerequisite {
+        +number modId
+        +string name
+        +string url
+        +string source
+    }
+    class DownloadItem {
+        +number modId
+        +ModFile file
+        +string kind
+    }
+    class DownloadPlan {
+        +string tier
+        +string action
+        +DownloadItem[] items
+        +Map filePageUrls
+        +string note
+    }
+    class ParsedMod {
+        +number modId
+        +Mod meta
+        +ModFile[] files
+        +ModFile mainFile
+        +ModFile[] chineseFiles
+        +Prerequisite[] prerequisites
+        +string plainSummary
+    }
+    class HistoryEntry {
+        +string id
+        +number modId
+        +number fileId
+        +string downloadedAt
+    }
+    class AppState {
+        +string apiKey
+        +string keyStatus
+        +string tier
+        +ParsedMod[] mods
+        +Map selectedFiles
+        +HistoryEntry[] history
+        +string theme
+        +string tab
+    }
+
+    class APP_CONFIG {
+        +string gameDomain
+        +string apiBaseUrl
+        +string webBaseUrl
+        +Map storageKeys
+    }
+    class ApiPath {
+        +validate() string
+        +modInfo(modId) string
+        +files(modId) string
+        +downloadLink(modId, fileId) string
+        +filePage(modId, fileId) string
+    }
+
+    class NexusApiClient {
+        +request(path, apiKey, signal) Promise
+        +validateKey(apiKey) Promise~KeyValidationResult~
+        +fetchModInfo(modId, apiKey) Promise~Mod~
+        +fetchFiles(modId, apiKey) Promise~ModFile[]~
+        +getDownloadLink(modId, fileId, apiKey) Promise~string~
+    }
+    class ModParser {
+        +parseModIds(input) number[]
+        +stripBBCode(bbcode) string
+        +isChineseFile(file) boolean
+        +findChineseFiles(files, desc) ModFile[]
+        +pickMainFile(files) ModFile
+        +detectPrerequisites(meta, text) Prerequisite[]
+        +buildParsedMod(id, meta, files) ParsedMod
+        +buildDownloadPlan(mod, fileId, includeZh, tier, manual) DownloadPlan
+    }
+    class DownloadService {
+        +executeDownloadPlan(plan, apiKey, onProgress) Promise~DownloadResult[]~
+    }
+    class DownloadUtils {
+        +triggerBrowserDownload(url, filename) void
+        +openFilePage(url) void
+        +copyText(text) Promise~boolean~
+    }
+    class AppStore {
+        -AppState state
+        +useApp() Store
+        +validate() Promise
+        +resolveMods(input) Promise
+        +selectFile(modId, fileId) void
+        +download(modId, manualAction) Promise
+    }
+    class PrerequisiteDB {
+        +KnownMod[] items
+    }
+    class ChineseKeywords {
+        +string[] keywords
+        +Map knownTranslations
+    }
+
+    Mod "1" *-- "0..*" NexusAuthor : authors
+    ParsedMod "1" *-- "1" Mod : meta
+    ParsedMod "1" *-- "0..*" ModFile : files
+    ParsedMod "1" *-- "0..*" Prerequisite : prerequisites
+    DownloadPlan "1" *-- "0..*" DownloadItem : items
+    DownloadItem "1" --> "1" ModFile : references
+    DownloadPlan "1" ..> "1" ParsedMod : built from
+    AppState "1" *-- "0..*" ParsedMod : mods
+    AppState "1" *-- "0..*" HistoryEntry : history
+
+    APP_CONFIG "1" --> "1" ApiPath : derives
+    NexusApiClient ..> APP_CONFIG : reads
+    NexusApiClient ..> Mod : returns
+    NexusApiClient ..> ModFile : returns
+    NexusApiClient ..> ValidateResponse : returns
+    NexusApiClient ..> DownloadLink : returns
+    ModParser ..> PrerequisiteDB : looks up
+    ModParser ..> ChineseKeywords : looks up
+    ModParser ..> ParsedMod : produces
+    ModParser ..> DownloadPlan : produces
+    DownloadService ..> DownloadPlan : executes
+    DownloadService ..> NexusApiClient : getDownloadLink
+    DownloadService ..> DownloadUtils : triggers
+    AppStore --> NexusApiClient : calls
+    AppStore --> ModParser : calls
+    AppStore --> DownloadService : calls

@@ -1,0 +1,163 @@
+%% 星露谷模组下载助手 v3 增量时序图（工作区 R32–R45，四段流程）
+%% 来源：docs/DESIGN-v3.md §3；架构师：高见远（Gao）
+
+%% ===== ① 上传 zip → 解压 → manifest → LocalMod（R33/R34/R35）=====
+sequenceDiagram
+    autonumber
+    actor U as 用户
+    participant UZ as UploadZone
+    participant ST as AppStore(useAppState)
+    participant ZS as zipService(JSZip)
+    participant US as updateService
+    participant DOM as 内存(FileNode.data)
+    participant WR as workspaceReducer
+
+    U->>UZ: 选择/拖入 zip（方式A 整文件夹 或 方式B 多选）
+    UZ->>ST: uploadFolderZip(file) / uploadSingleZips(files)
+    ST->>ST: 读 APP_CONFIG.upload 阈值；超硬阈值 → window.confirm 二次确认
+    ST->>WR: SET_UPLOAD_PROGRESS(reading)
+    ST->>ZS: parseModsZip(file, mode, onProgress)
+    ZS->>ZS: file.arrayBuffer() → JSZip.loadAsync()
+    alt 加密/损坏 zip
+        ZS-->>ST: skipped[{name,reason}]（失败隔离）
+        ST-->>UZ: Toast「无法解压：文件可能已加密或损坏」
+    else 正常
+        ZS->>ZS: 按 mode 拆出模组根（过滤 __MACOSX/.DS_Store）
+        loop 每个模组根
+            ZS->>DOM: buildFileTree → async('uint8array') 写入 fileTree
+            ZS->>ZS: extractManifest(fileTree)（大小写归一/容错）
+            ZS->>US: extractNexusModIds(manifest?.UpdateKeys ?? [])
+            US-->>ZS: number[]（去 @子键/去重/仅 Nexus）
+            ZS-->>ST: LocalMod{fileTree,manifest,nexusModIds,...}
+        end
+        ZS-->>ST: ModParseOutcome{mods, skipped, duplicateNames}
+        ST->>WR: ADD_LOCAL_MODS(mods)
+        ST->>WR: SET_UPLOAD_PROGRESS(done)
+        ST-->>UZ: Toast「已导入 N 个模组」/「检测到 N 个可能重复的模组」
+    end
+    Note over DOM,ST: fileTree 与字节仅存内存；UI 常驻提示「刷新页面后需重新上传」
+
+
+%% ===== ② 更新检测（含 unknown 分支与限流/缓存，R37/R38/R39/R45）=====
+sequenceDiagram
+    autonumber
+    actor U as 用户
+    participant LML as LocalModLibrary/LocalModCard
+    participant ST as AppStore(useAppState)
+    participant US as updateService
+    participant API as NexusApiClient
+    participant NX as Nexus API(files.json only)
+    participant WR as workspaceReducer
+
+    U->>LML: 点「检测全部」/ 某卡「更新检测」
+    LML->>ST: checkUpdates(force?) / checkOneUpdate(id, force?)
+    ST->>ST: 守卫 keyStatus === 'valid'？否则 Toast 提示并停止
+    ST->>WR: SET_CHECKING_IDS(ids)
+    ST->>US: detectAllUpdates(mods, apiKey, onResult, force)
+    loop 并发 ≤ APP_CONFIG.update.concurrency
+        alt manifest=null 或 nexusModIds 为空（R39）
+            US->>US: 直接 unknown，固定文案，不发请求
+        else 缓存未过期且 force=false（Q8 10min）
+            US->>US: 用缓存 status/updateInfo/checkError，跳过请求
+        else 需要请求
+            loop 每个 modId（串行）
+                US->>API: fetchFiles(modId, apiKey)
+                API->>NX: GET .../mods/{modId}/files.json
+                NX-->>API: ModFile[]
+                API-->>US: ModFile[]
+            end
+            US->>US: pickLatestFile → UpdateInfo{version,uploadedAt,fileId}
+            US->>US: decideUpdateStatus（版本号优先/时间兜底/本地高不提示）
+        end
+        US-->>ST: onResult(id, UpdateDetectionResult)
+        ST->>WR: APPLY_UPDATE_RESULT(id, result, checkedAt=now)
+        Note right of WR: status=latest/outdated/unknown；写 lastCheckedAt
+    end
+    ST->>WR: SET_CHECKING_IDS([])
+    ST-->>LML: 徽标刷新：绿「已是最新」/ 橙「有新版本 vX」/ 灰「无法检测」+ 原因
+    Note over API,NX: 全流程绝不调用 download_link.json；outdated 仅给按钮跳 apiPath.modPage(modId)
+
+
+%% ===== ③ 搜索 → 加入清单 / 下载（R40/R41/R42）=====
+sequenceDiagram
+    autonumber
+    actor U as 用户
+    participant MS as ModSearch
+    participant DB as useDebounce(500ms)
+    participant ST as AppStore(useAppState)
+    participant API as NexusApiClient
+    participant NX as Nexus API(search.json)
+    participant WR as workspaceReducer
+    participant TB as 下载Tab(v1)
+
+    U->>MS: 输入关键词
+    MS->>WR: SET_SEARCH_QUERY(query)
+    MS->>DB: debouncedQuery = useDebounce(query, APP_CONFIG.search.debounceMs)
+    DB-->>MS: 触发 searchMods(debouncedQuery)
+    MS->>ST: searchMods(query)
+    ST->>ST: 守卫 keyStatus=valid / 非空 / now>=cooldownUntil
+    ST->>WR: SEARCH_START(query)
+    ST->>API: searchMods(query, page=1, apiKey)
+    API->>NX: GET .../search.json?game_id=1303&searchQuery=<encode>&page=1 (apikey 头)
+    alt HTTP 429
+        NX-->>API: 429
+        API-->>ST: NexusApiError(429)
+        ST->>WR: SEARCH_ERROR(rateLimited=true, cooldownUntil=now+退避)
+        ST-->>MS: 「请求过于频繁，请稍后再试」+ 按钮禁用冷却
+    else 成功
+        NX-->>API: SearchResponse{mods,pagination}
+        API-->>ST: SearchResponse
+        ST->>ST: 映射 SearchMod[]→SearchResult[]（inList 由 pendingDownloads 派生）
+        ST->>WR: SEARCH_SUCCESS(results, hasMore, total, append=false)
+        ST-->>MS: 渲染结果卡片（缩略图失败走田园占位）
+    end
+    U->>MS: 点「加载更多」
+    MS->>ST: loadMoreSearch()
+    ST->>ST: 守卫 hasMore 且 results.length < APP_CONFIG.search.maxResults
+    ST->>API: searchMods(query, page+1, apiKey) → SEARCH_SUCCESS(append=true)
+
+    alt 点「加入清单」
+        U->>MS: addPending(result)
+        ST->>WR: ADD_PENDING + MARK_IN_LIST（按 modId 去重）
+        ST-->>U: Toast「已加入待下载清单」；卡片变「已在清单」禁用
+        Note over ST: 清单项无本地文件树，不参与打包（分段③常驻说明条）
+    else 点「下载」
+        U->>MS: downloadFromSearch(modId)
+        ST->>WR: SET_IDS_INPUT(String(modId)) + SET_TAB('download')
+        ST->>ST: resolveMods(String(modId))（复用 v1 识别/文件选择/汉化/前置）
+        ST->>TB: 渲染下载 Tab（Premium 直下 / standard 降级，照常写历史）
+    end
+
+
+%% ===== ④ 勾选 → 打包下载（R43/R44）=====
+sequenceDiagram
+    autonumber
+    actor U as 用户
+    participant LML as LocalModLibrary
+    participant PP as PackPanel
+    participant ST as AppStore(useAppState)
+    participant ZS as zipService(JSZip)
+    participant DOM as 浏览器 Blob/a.download
+
+    U->>LML: 勾选若干本地模组（仅 fileCount>0 可选）
+    LML->>ST: togglePackSelect(id)
+    ST->>ST: 切到分段③（本地 UI state）
+    PP->>ST: packSelected()
+    ST->>ST: 读 selectedPackIds → localMods；空则 Toast「请先勾选要打包的模组」并 return
+    PP-->>U: 二次确认层（模组名/数量/文件总数/预估大小）
+    U->>PP: 确认打包
+    ST->>ZS: buildModsZip(mods, onProgress)
+    loop 每个模组
+        ZS->>ZS: folder = resolvePackFolderName(rootFolder→Name→mod-{id}) + sanitize
+        ZS->>ZS: 同名加后缀 -2/-3（提示）
+        loop 每个 file 节点
+            ZS->>ZS: zip.file(`${folder}/${node.path}`, node.data)（原样还原层级）
+            ZS-->>ST: onProgress(phase=packing, current, total)
+        end
+    end
+    ZS->>ZS: generateAsync(DEFLATE) → Blob
+    ZS-->>ST: Blob
+    ST->>DOM: createObjectURL → triggerBrowserDownload(url, stardew-mods-pack-YYYY-MM-DD.zip)
+    ST->>WR: SET_PACK_PROGRESS(done) + revokeObjectURL
+    ST-->>U: Toast「已打包：解压后把文件夹放进游戏的 Mods 目录即可使用」
+    Note over ZS,DOM: 纯本地重组，不联网、不重新下载、不外传任何文件字节

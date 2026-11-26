@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --app-bg: #F7FAF3;
+  --app-bg-image: linear-gradient(180deg, #F7FAF3, #EFF5E6);
+  --app-surface: #FFFFFF;
+  --app-surface-raised: #FDFBF4;
+  --app-text: #2F3A2E;
+  --app-muted: #6B7A66;
+  --app-border: rgba(95, 174, 87, 0.16);
+  --chip-main-bg: #E7F4E4;
+  --chip-main-fg: #3F8F42;
+  --chip-chinese-bg: #FBF1D6;
+  --chip-chinese-fg: #9A6B12;
+  --chip-prereq-bg: #E4F1EC;
+  --chip-prereq-fg: #2F7A5A;
+  --chip-version-bg: #FFF4E2;
+  --chip-version-fg: #A8631A;
+  --chip-error-bg: #FDECEC;
+  --chip-error-fg: #A94848;
+}
+
+:root.dark {
+  color-scheme: dark;
+  /* 以下 6 行 = v1 原值，禁止改动 */
+  --app-bg: #0f172a;
+  --app-surface: #1e293b;
+  --app-surface-raised: rgba(30, 41, 59, 0.8);
+  --app-text: #e2e8f0;
+  --app-muted: #94a3b8;
+  --app-border: rgba(148, 163, 184, 0.14);
+  --app-bg-image: none;
+  /* 语义 chip 在深色下映射回 v1 观感（低透明底 + 亮字） */
+  --chip-main-bg: rgba(56, 189, 248, 0.15);
+  --chip-main-fg: #38bdf8;
+  --chip-chinese-bg: rgba(251, 191, 36, 0.15);
+  --chip-chinese-fg: #fbbf24;
+  --chip-prereq-bg: rgba(167, 139, 250, 0.15);
+  --chip-prereq-fg: #a78bfa;
+  --chip-version-bg: rgba(251, 191, 36, 0.15);
+  --chip-version-fg: #fbbf24;
+  --chip-error-bg: rgba(244, 63, 94, 0.15);
+  --chip-error-fg: #fb7185;
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    background-color: var(--app-bg);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC',
+      'Microsoft YaHei', sans-serif;
+    background-color: var(--app-bg);
+    background-image: var(--app-bg-image);
+    background-attachment: fixed;
+    color: var(--app-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+  }
+
+  button,
+  input,
+  textarea {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid #5FAE57;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* iOS 观感统一卡片：圆角、柔和阴影、适度毛玻璃 */
+  .app-card {
+    @apply rounded-2xl shadow-card border;
+    background-color: var(--app-surface-raised);
+    border-color: var(--app-border);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* 所有可点击控件的统一焦点态与最小触控区 */
+  .tap-target {
+    @apply min-h-[44px] focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent;
+  }
+
+  .primary-btn {
+    @apply tap-target inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .secondary-btn {
+    @apply tap-target inline-flex items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    border-color: var(--app-border);
+    background-color: var(--app-surface);
+    color: var(--app-text);
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium leading-none;
+  }
+
+  /* 语义 chip：浅底深字 / 深色下由变量映射回 v1 */
+  .chip--main {
+    background: var(--chip-main-bg);
+    color: var(--chip-main-fg);
+  }
+
+  .chip--chinese {
+    background: var(--chip-chinese-bg);
+    color: var(--chip-chinese-fg);
+  }
+
+  .chip--prereq {
+    background: var(--chip-prereq-bg);
+    color: var(--chip-prereq-fg);
+  }
+
+  .chip--version {
+    background: var(--chip-version-bg);
+    color: var(--chip-version-fg);
+  }
+
+  .chip--error {
+    background: var(--chip-error-bg);
+    color: var(--chip-error-fg);
+  }
+
+  /* 更新状态 unknown 用灰 chip，不需要新 CSS 变量 */
+  .chip--muted { background: var(--app-surface-raised); color: var(--app-muted); }
+
+  /* 进度条：brand 现有色阶，深色下自动协调 */
+  .progress-track { height: 6px; border-radius: 9999px; background: var(--app-border); overflow: hidden; }
+  .progress-fill  { height: 100%; border-radius: 9999px; background: #5FAE57; transition: width .2s ease; }
+
+  /* 【v4】文件树行：浅绿左边线层级感 + ≥44px 触控区 */
+  .tree-row {
+    @apply flex min-h-[44px] items-center rounded-lg transition;
+    padding-left: 4px;
+  }
+  .tree-row:hover { background: var(--chip-main-bg); }
+
+  /* 【v4】面包屑：可横向滚动的长路径 */
+  .breadcrumb {
+    @apply mt-3 flex min-h-[44px] items-center gap-1 overflow-x-auto rounded-xl px-2 no-scrollbar;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+  }
+
+  /* 【v4】模态层：只读文本预览 / 冲突二选一，含安全区 */
+  .modal-mask {
+    @apply fixed inset-0 z-50 flex items-center justify-center px-4 py-6;
+    background: rgba(15, 23, 42, 0.42);
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+  .modal-scroll { @apply max-h-[45vh] overflow-y-auto; background: var(--app-surface); }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+
+  .safe-top {
+    padding-top: calc(0.75rem + env(safe-area-inset-top));
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

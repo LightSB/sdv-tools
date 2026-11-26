@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      // 在首屏渲染前同步主题，避免深色闪烁（FOUC）。默认浅色田园风；
+      // 仅当用户明确存过 dark 偏好时才挂载 dark 类。
+      (function () {
+        try {
+          var raw = window.localStorage.getItem('sdmh.theme');
+          var theme = raw ? JSON.parse(raw) : 'light';
+          if (theme === 'dark') document.documentElement.classList.add('dark');
+        } catch (e) {
+          // 存储不可用时保持默认浅色
+        }
+      })();
+    </script>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="模组助手" />
+    <meta name="theme-color" content="#F7FAF3" />
+    <meta name="description" content="星露谷模组下载助手 —— 粘贴模组 ID，一次看清文件、汉化与前置。" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <title>星露谷模组下载助手</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
